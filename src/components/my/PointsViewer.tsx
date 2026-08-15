@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { EMAIL_VERIFY_BONUS_POINTS, RECHARGE_PACKAGES, PAY_STATUS_TEXT } from "@/lib/constants";
 import { POINT_LOG_TYPE_TEXT } from "@/lib/constants";
 import { formatDate, formatPoints } from "@/lib/utils";
 
@@ -12,14 +13,46 @@ type LogItem = {
   createdAt?: unknown;
 };
 
+type RechargeOrder = {
+  _id: string;
+  orderNo: string;
+  packageId: string;
+  amount: number;
+  points: number;
+  status: "pending" | "paid" | "credited" | "failed";
+  alipayTradeNo?: string;
+  createdAt: string;
+  paidAt?: string;
+  creditedAt?: string;
+};
+
 export default function PointsViewer() {
   const [points, setPoints] = useState<number | null>(null);
   const [paidPoints, setPaidPoints] = useState<number>(0);
   const [bonusPoints, setBonusPoints] = useState<number>(0);
-  const [bonusStatus, setBonusStatus] = useState<string>("pending");
+  const [emailVerified, setEmailVerified] = useState<boolean>(false);
+  const [registerBonusGranted, setRegisterBonusGranted] = useState<boolean>(false);
+  const [emailVerifyBonusGranted, setEmailVerifyBonusGranted] = useState<boolean>(false);
+  const [isAdmin, setIsAdmin] = useState<boolean>(false);
   const [logs, setLogs] = useState<LogItem[]>([]);
+  const [rechargeOrders, setRechargeOrders] = useState<RechargeOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
+  // 邮箱验证相关状态
+  const [verifyEmail, setVerifyEmail] = useState("");
+  const [verifyCode, setVerifyCode] = useState("");
+  const [verifyVerificationId, setVerifyVerificationId] = useState("");
+  const [sendingCode, setSendingCode] = useState(false);
+  const [verifying, setVerifying] = useState(false);
+  const [verifyMsg, setVerifyMsg] = useState("");
+  const [countdown, setCountdown] = useState(0);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // 充值相关状态
+  const [recharging, setRecharging] = useState(false);
+  const [selectedPackage, setSelectedPackage] = useState<string>("package_10");
+  const [payUrl, setPayUrl] = useState<string | null>(null);
 
   function load() {
     fetch("/api/my/points")
@@ -30,17 +63,180 @@ export default function PointsViewer() {
           setPoints(Number(d.points || 0));
           setPaidPoints(Number(d.paidPoints || 0));
           setBonusPoints(Number(d.bonusPoints || 0));
-          setBonusStatus(d.bonusStatus || "pending");
+          setEmailVerified(Boolean(d.emailVerified));
+          setRegisterBonusGranted(Boolean(d.registerBonusGranted));
+          setEmailVerifyBonusGranted(Boolean(d.emailVerifyBonusGranted));
+          setIsAdmin(Boolean(d.isAdmin));
           setLogs(d.logs || []);
         }
       })
       .catch(() => setError("加载失败"))
       .finally(() => setLoading(false));
+
+    // 加载充值订单
+    fetch("/api/my/recharge-orders")
+      .then((r) => r.json())
+      .then((d) => {
+        if (!d.error) setRechargeOrders(d.orders || []);
+      })
+      .catch(() => {});
+  }
+
+  async function checkOrderStatus(orderNo: string) {
+    try {
+      const res = await fetch(`/api/pay/alipay/status/${orderNo}`);
+      const data = await res.json();
+      if (data.success && data.status === "credited") {
+        load();
+      }
+    } catch {}
+  }
+
+  async function pollPendingOrders() {
+    const pendingOrders = rechargeOrders.filter((o) => o.status === "pending" || o.status === "paid");
+    for (const order of pendingOrders) {
+      await checkOrderStatus(order.orderNo);
+    }
+    load();
   }
 
   useEffect(() => {
     load();
+
+    // 检查 URL 中的充值成功回调
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get("recharge") === "success") {
+      window.history.replaceState({}, "", window.location.pathname);
+      // 轮询检查订单状态（仅执行一次）
+      setTimeout(() => pollPendingOrders(), 500);
+    }
+
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  async function handleSelectPackage(packageId: string) {
+    setSelectedPackage(packageId);
+    setPayUrl(null);
+  }
+
+  async function handleCreateOrder() {
+    setRecharging(true);
+    setPayUrl(null);
+    try {
+      const res = await fetch("/api/pay/alipay/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ packageId: selectedPackage }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || "创建订单失败");
+        return;
+      }
+      setPayUrl(data.payUrl);
+      // 打开支付宝支付页面
+      if (data.payUrl) {
+        window.open(data.payUrl, "_blank");
+      }
+    } catch {
+      setError("网络错误，请稍后再试");
+    } finally {
+      setRecharging(false);
+    }
+  }
+
+  async function handleSendVerifyCode() {
+    setVerifyMsg("");
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(verifyEmail)) {
+      setVerifyMsg("请输入正确的邮箱地址");
+      return;
+    }
+    setSendingCode(true);
+    try {
+      const res = await fetch("/api/my/email-code", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: verifyEmail }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setVerifyMsg(data.error || "验证码发送失败");
+        return;
+      }
+      if (data.verificationId) setVerifyVerificationId(data.verificationId);
+      if (data.devCode) {
+        setVerifyCode(data.devCode);
+        setVerifyMsg("本地调试模式：验证码已自动填入");
+      } else {
+        setVerifyMsg("");
+      }
+      startCountdown();
+    } catch {
+      setVerifyMsg("网络错误，请稍后再试");
+    } finally {
+      setSendingCode(false);
+    }
+  }
+
+  async function handleVerifyEmail() {
+    setVerifyMsg("");
+    if (!verifyEmail) {
+      setVerifyMsg("请输入邮箱");
+      return;
+    }
+    if (!verifyCode) {
+      setVerifyMsg("请输入验证码");
+      return;
+    }
+    if (!verifyVerificationId) {
+      setVerifyMsg("请先获取验证码");
+      return;
+    }
+    setVerifying(true);
+    try {
+      const res = await fetch("/api/my/verify-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: verifyEmail,
+          code: verifyCode,
+          verificationId: verifyVerificationId,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setVerifyMsg(data.error || "验证失败");
+        return;
+      }
+      setVerifyMsg("验证成功！+" + data.points + " 积分已到账");
+      setVerifyEmail("");
+      setVerifyCode("");
+      setVerifyVerificationId("");
+      setCountdown(0);
+      load();
+    } catch {
+      setVerifyMsg("网络错误，请稍后再试");
+    } finally {
+      setVerifying(false);
+    }
+  }
+
+  function startCountdown() {
+    setCountdown(60);
+    if (timerRef.current) clearInterval(timerRef.current);
+    timerRef.current = setInterval(() => {
+      setCountdown((c) => {
+        if (c <= 1) {
+          if (timerRef.current) clearInterval(timerRef.current);
+          return 0;
+        }
+        return c - 1;
+      });
+    }, 1000);
+  }
 
   if (loading) {
     return (
@@ -77,14 +273,181 @@ export default function PointsViewer() {
         <div className="text-5xl">✦</div>
       </div>
 
-      {/* 注册赠送状态 */}
-      {bonusStatus !== "granted" && (
+      {/* 充值积分区域（仅管理员可见，沙箱测试用） */}
+      {isAdmin && (
+      <div className="dt-card p-6">
+        <h2 className="mb-4 font-semibold text-zinc-200">
+          充值积分 <span className="text-xs text-amber-400 font-normal">(沙箱环境)</span>
+        </h2>
+        {!payUrl ? (
+          <>
+            <div className="grid grid-cols-2 gap-3 mb-4">
+              {RECHARGE_PACKAGES.map((pkg) => (
+                <button
+                  key={pkg.id}
+                  type="button"
+                  onClick={() => handleSelectPackage(pkg.id)}
+                  className={`cursor-pointer rounded-xl border-2 p-4 text-left transition-all ${
+                    selectedPackage === pkg.id
+                      ? "border-[#7c5cff] bg-[#7c5cff]/10"
+                      : "border-zinc-700 hover:border-zinc-500"
+                  }`}
+                >
+                  <p className="font-medium text-zinc-200">{pkg.name}</p>
+                  <p className="mt-1 text-2xl font-bold text-amber-300">
+                    {formatPoints(pkg.points)}
+                  </p>
+                  <p className="mt-1 text-xs text-zinc-500">¥{(pkg.amount / 100).toFixed(2)}</p>
+                  {pkg.remark && (
+                    <p className="mt-1 text-xs text-emerald-400">{pkg.remark}</p>
+                  )}
+                </button>
+              ))}
+            </div>
+            <button
+              type="button"
+              onClick={handleCreateOrder}
+              disabled={recharging}
+              className="btn-primary w-full"
+            >
+              {recharging ? "创建订单中…" : "立即充值"}
+            </button>
+          </>
+        ) : (
+          <div className="text-center py-4">
+            <p className="text-zinc-300">正在跳转到支付宝...</p>
+            <p className="mt-2 text-xs text-zinc-500">
+              支付完成后请返回本站，积分将自动到账
+            </p>
+          </div>
+        )}
+      </div>
+      )}
+
+      {/* 充值记录 */}
+      {rechargeOrders.length > 0 && (
+        <div className="dt-card overflow-hidden">
+          <div className="border-b border-border px-6 py-4">
+            <h2 className="font-semibold">充值记录</h2>
+          </div>
+          <ul className="divide-y divide-border">
+            {rechargeOrders.map((order) => (
+              <li key={order._id} className="px-6 py-4 flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-zinc-200">
+                    {RECHARGE_PACKAGES.find((p) => p.id === order.packageId)?.name || order.packageId}
+                  </p>
+                  <p className="mt-0.5 text-xs text-zinc-500">
+                    订单号: {order.orderNo}
+                  </p>
+                  <p className="mt-0.5 text-xs text-zinc-600">
+                    {formatDate(order.createdAt)}
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="font-semibold text-emerald-400">+{formatPoints(order.points)}</p>
+                  <span className={`badge ${
+                    order.status === "credited" ? "badge-success" :
+                    order.status === "pending" ? "badge-warning" :
+                    order.status === "paid" ? "badge-pending" : "badge-error"
+                  }`}>
+                    {PAY_STATUS_TEXT[order.status]}
+                  </span>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {/* 邮箱验证奖励模块 */}
+      {emailVerifyBonusGranted ? (
         <div className="dt-card p-6">
-          <p className="text-sm text-zinc-400">
-            {bonusStatus === "rejected"
-              ? "注册赠送已被拒绝"
-              : "注册赠送积分审核中，请耐心等待"}
+          <div className="flex items-center gap-3">
+            <span className="text-emerald-400">✓</span>
+            <div>
+              <p className="font-medium text-zinc-200">邮箱验证奖励已领取</p>
+              <p className="mt-0.5 text-xs text-zinc-500">
+                +{EMAIL_VERIFY_BONUS_POINTS} 积分
+              </p>
+            </div>
+            <span className="ml-auto badge badge-pending text-xs">
+              已领取
+            </span>
+          </div>
+        </div>
+      ) : emailVerified && registerBonusGranted ? (
+        <div className="dt-card p-6">
+          <div className="flex items-center gap-3">
+            <span className="text-emerald-400">✓</span>
+            <div>
+              <p className="font-medium text-zinc-200">历史积分已发放</p>
+              <p className="mt-0.5 text-xs text-zinc-500">
+                注册赠送已完成，邮箱验证奖励无需重复领取
+              </p>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="dt-card p-6">
+          <p className="mb-4 text-sm text-zinc-300">
+            验证邮箱可获得{" "}
+            <span className="font-semibold text-emerald-400">
+              +{EMAIL_VERIFY_BONUS_POINTS} 积分
+            </span>
           </p>
+          <div className="flex flex-col gap-3">
+            <div className="flex gap-2">
+              <input
+                className="input-field flex-1"
+                type="email"
+                value={verifyEmail}
+                onChange={(e) => setVerifyEmail(e.target.value)}
+                placeholder="请输入邮箱"
+                autoComplete="email"
+                maxLength={64}
+              />
+              <button
+                type="button"
+                onClick={handleSendVerifyCode}
+                disabled={sendingCode || countdown > 0}
+                className="shrink-0 cursor-pointer rounded-xl border border-zinc-700 px-3 text-sm text-zinc-300 transition-colors hover:border-[#7c5cff] hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {countdown > 0 ? `${countdown}s` : sendingCode ? "发送中…" : "获取验证码"}
+              </button>
+            </div>
+            <div className="flex gap-2">
+              <input
+                className="input-field flex-1"
+                type="text"
+                inputMode="numeric"
+                value={verifyCode}
+                onChange={(e) =>
+                  setVerifyCode(e.target.value.replace(/[^\d]/g, ""))
+                }
+                placeholder="请输入 6 位验证码"
+                autoComplete="one-time-code"
+                maxLength={6}
+              />
+              <button
+                type="button"
+                onClick={handleVerifyEmail}
+                disabled={verifying}
+                className="btn-primary shrink-0"
+              >
+                {verifying ? "验证中…" : "验证并领取"}
+              </button>
+            </div>
+          </div>
+          {verifyMsg && (
+            <p
+              className={`mt-3 text-xs ${
+                verifyMsg.includes("成功") ? "text-emerald-400" : "text-red-400"
+              }`}
+            >
+              {verifyMsg}
+            </p>
+          )}
         </div>
       )}
 

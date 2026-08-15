@@ -5,7 +5,7 @@ import { handleApiError, json } from "@/lib/server/api";
 
 const PAGE_SIZE = 100;
 
-/** 积分中心：当前积分 + 流水 */
+/** 积分中心：当前积分 + 流水 + 邮箱验证状态 */
 export async function GET() {
   try {
     const session = await requireUser();
@@ -24,10 +24,6 @@ export async function GET() {
     const points = hasDualPool
       ? paidPoints + bonusPoints
       : Number(user?.points ?? 0);
-    const bonusStatus = String(user?.bonusStatus || "pending") as
-      | "granted"
-      | "rejected"
-      | "pending";
 
     // 流水
     const logsRes = await db
@@ -38,7 +34,17 @@ export async function GET() {
       .get();
     const logs = (logsRes.data as Record<string, unknown>[] | undefined) || [];
 
-    return json({ points, paidPoints, bonusPoints, bonusStatus, logs });
+    return json({
+      points,
+      paidPoints,
+      bonusPoints,
+      email: user?.email || "",
+      emailVerified: Boolean(user?.emailVerified),
+      registerBonusGranted: Boolean(user?.registerBonusGranted),
+      emailVerifyBonusGranted: Boolean(user?.emailVerifyBonusGranted),
+      isAdmin: Boolean(user?.isAdmin),
+      logs,
+    });
   } catch (e) {
     return handleApiError(e);
   }

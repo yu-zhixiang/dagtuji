@@ -1,102 +1,95 @@
-import { NextRequest } from "next/server";
-import { COLLECTIONS, REGISTER_BONUS_POINTS, type BonusClaimStatus } from "@/lib/constants";
-import { getCmd, getDb, unwrapDoc } from "@/lib/cloudbase";
+import { COLLECTIONS } from "@/lib/constants";
+import { getDb } from "@/lib/cloudbase";
 import { requireAdmin } from "@/lib/server/auth";
-import { ApiError, handleApiError, json } from "@/lib/server/api";
-import { claimRegisterBonus } from "@/lib/server/points";
+import { handleApiError, json } from "@/lib/server/api";
 
-/** 风控人工审核列表：pending（待审核）与已拒绝用户 */
-export async function GET(req: NextRequest) {
+/**
+ * GET /api/admin/review
+ * 列出高风险用户供管理员查看（纯展示，无 approve/reject 操作）。
+ * 筛选参数：status = review | reject | all
+ *
+ * 背景：自 2026-08-15 起，注册赠送积分改为邮箱验证后发放（+150积分），
+ * 不再进行人工审核。本接口仅保留风险用户查询能力。
+ */
+export async function GET(req: Request) {
   try {
     await requireAdmin();
-    const db = getDb();
     const url = new URL(req.url);
-    const status = url.searchParams.get("status") || "pending";
-
-    const allowed: BonusClaimStatus[] = ["pending", "rejected", "granted"];
-    if (!allowed.includes(status as BonusClaimStatus)) {
-      throw new ApiError(400, "无效的状态");
-    }
-
-    const res = await db
-      .collection(COLLECTIONS.USERS)
-      .where({ bonusStatus: status })
-      .orderBy("createdAt", "desc")
-      .limit(100)
-      .get();
-    const users = ((res.data as Array<Record<string, unknown>>) || []).map((u) => ({
-      id: u._id,
-      username: u.username,
-      email: u.email || "",
-      nickname: u.nickname || "",
-      registerIp: u.registerIp || "",
-      deviceHash: u.deviceHash || null,
-      riskScore: Number(u.riskScore || 0),
-      riskLevel: u.riskLevel || "normal",
-      bonusStatus: u.bonusStatus || "pending",
-      // 双池字段均存在才以双池之和为合计，points 总字段可能为陈旧值；
-      // 只存在一个双池字段时视为异常数据，不自动把缺失字段当 0，回落显示历史 points
-      points:
-        u.paidPoints !== undefined && u.bonusPoints !== undefined
-          ? Number(u.paidPoints || 0) + Number(u.bonusPoints || 0)
-          : Number(u.points || 0),
-      paidPoints: Number(u.paidPoints || 0),
-      bonusPoints: Number(u.bonusPoints || 0),
-      createdAt: u.createdAt,
-    }));
-
-    return json({ users });
-  } catch (e) {
-    return handleApiError(e);
-  }
-}
-
-/** 管理员审核：approve 发放赠送 / reject 拒绝发放 */
-export async function PATCH(req: NextRequest) {
-  try {
-    await requireAdmin();
-    const body = await req.json().catch(() => null);
-    const userId = String(body?.userId || "");
-    const action = String(body?.action || "");
-
-    if (!userId) throw new ApiError(400, "缺少用户 ID");
-    if (action !== "approve" && action !== "reject") {
-      throw new ApiError(400, "无效的操作");
-    }
+    const status = url.searchParams.get("status") || "review";
 
     const db = getDb();
-    const cmd = getCmd();
-    const userRes = await db.collection(COLLECTIONS.USERS).doc(userId).get();
-    const user = unwrapDoc(userRes);
-    if (!user) throw new ApiError(404, "用户不存在");
 
-    if (action === "approve") {
-      // 重新评估：仅当非 reject 时发放
-      if (user.bonusStatus === "rejected") {
-        throw new ApiError(400, "该用户赠送已被拒绝，无法再通过审核");
-      }
-      const result = await claimRegisterBonus({
-        userId,
-        bonus: REGISTER_BONUS_POINTS,
-        email: String(user.email || ""),
-        deviceHash: user.deviceHash ? String(user.deviceHash) : null,
-        ip: String(user.registerIp || ""),
-      });
-      if (result === "duplicate") {
-        throw new ApiError(400, "该用户已领取过注册赠送");
-      }
-      return json({ success: true, message: "已发放注册赠送积分" });
+    // 获取风险用户列表
+    let res;
+    if (status === "all") {
+      res = await db
+        .collection(COLLECTIONS.USERS)
+        .where({ riskLevel: { $in: ["review", "reject"] } })
+        .orderBy("createdAt", "desc")
+        .limit(100)
+        .get();
+    } else if (status === "review" || status === "reject") {
+      res = await db
+        .collection(COLLECTIONS.USERS)
+        .where({ riskLevel: status })
+        .orderBy("createdAt", "desc")
+        .limit(100)
+        .get();
+    } else {
+      return json({ error: "无效的状态参数，支持：review / reject / all" }, 400);
     }
 
-    // reject
-    const res = await db
+    const users = (res.data || []).map((u: Record<string, unknown>) => {
+      const paidPoints = Number(u.paidPoints ?? 0);
+      const bonusPoints = Number(u.bonusPoints ?? 0);
+      const hasDualPool =
+        u.paidPoints !== undefined && u.bonusPoints !== undefined;
+      const points = hasDualPool
+        ? paidPoints + bonusPoints
+        : Number(u.points ?? 0);
+      return {
+        id: u._id as string,
+        username: String(u.username || ""),
+        nickname: String(u.nickname || ""),
+        email: String(u.email || ""),
+        emailVerified: Boolean(u.emailVerified),
+        registerBonusGranted: Boolean(u.registerBonusGranted),
+        emailVerifyBonusGranted: Boolean(u.emailVerifyBonusGranted),
+        emailVerifyBonusGrantedAt: u.emailVerifyBonusGrantedAt,
+        points,
+        paidPoints,
+        bonusPoints,
+        riskScore: Number(u.riskScore || 0),
+        riskLevel: u.riskLevel || "normal",
+        bonusStatus: (u.bonusStatus as string) || null,
+        createdAt: u.createdAt,
+        lastOrderAt: u.lastOrderAt,
+      };
+    });
+
+    // 今日新增用户数
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    const todayCount = await db
       .collection(COLLECTIONS.USERS)
-      .where({ _id: userId, bonusStatus: cmd.neq("rejected") })
-      .update({ bonusStatus: "rejected", riskLevel: "reject" });
-    if (res.updated !== 1) {
-      throw new ApiError(400, "该用户状态已变更，请刷新后重试");
-    }
-    return json({ success: true, message: "已拒绝注册赠送" });
+      .where({ createdAt: { $gte: todayStart } })
+      .count();
+
+    // 待审核（riskLevel=review）数量
+    const pendingCount = await db
+      .collection(COLLECTIONS.USERS)
+      .where({ riskLevel: "review" })
+      .count();
+
+    return json({
+      users,
+      stats: {
+        totalUsers: users.length,
+        pendingReview: pendingCount.count,
+        todayNewUsers: todayCount.count,
+      },
+      status,
+    });
   } catch (e) {
     return handleApiError(e);
   }

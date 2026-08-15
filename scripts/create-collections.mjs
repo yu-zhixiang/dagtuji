@@ -40,6 +40,8 @@ const COLLECTIONS = [
   "sms_codes",
   "email_codes",
   "bonus_claims",
+  "verified_emails",
+  "recharge_orders",
   "risk_events",
   "rate_limits",
 ];

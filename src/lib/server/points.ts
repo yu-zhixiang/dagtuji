@@ -67,25 +67,6 @@ export function normalizePoints(user: Record<string, unknown>): {
   return { paid, bonus, total: paid + bonus };
 }
 
-/** 迁移旧数据：将 points 拆入双池字段，返回 {paid, bonus} */
-async function ensureDualPool(
-  userId: string,
-  user: Record<string, unknown>
-): Promise<{ paid: number; bonus: number }> {
-  if (user.paidPoints !== undefined || user.bonusPoints !== undefined) {
-    const n = normalizePoints(user);
-    return { paid: n.paid, bonus: n.bonus };
-  }
-  const db = getDb();
-  const legacy = Number(user.points ?? 0);
-  await db.collection(COLLECTIONS.USERS).doc(userId).update({
-    paidPoints: legacy,
-    bonusPoints: 0,
-    points: legacy,
-  });
-  return { paid: legacy, bonus: 0 };
-}
-
 /**
  * 在事务内归一为双池字段（旧用户仅有 points 时迁移），返回 { paid, bonus }。
  * 迁移写入与后续扣减/退款同事务，保证 users.points === bonusPoints + paidPoints。
@@ -290,69 +271,6 @@ export async function addPointLog(
     remark,
     createdAt: db.serverDate(),
   });
-}
-
-/**
- * 领取注册赠送积分（防重复：同 user / 同 email / 同 device 只发一次）。
- * 所有发放记录写入 bonus_claims。
- * @returns "granted" 发放成功 | "duplicate" 已领取过 | "rejected" 被拒绝
- */
-export async function claimRegisterBonus(params: {
-  userId: string;
-  bonus: number;
-  email?: string;
-  deviceHash?: string | null;
-  ip?: string;
-}): Promise<"granted" | "duplicate" | "rejected"> {
-  const db = getDb();
-  const cmd = getCmd();
-  const { userId, bonus, email, deviceHash, ip } = params;
-
-  // 1. 用户已标记拒绝 → 不可领取
-  const userRes = await db.collection(COLLECTIONS.USERS).doc(userId).get();
-  const user = unwrapDoc(userRes);
-  if (!user) throw new ApiError(404, "用户不存在");
-  if (user.bonusStatus === "rejected") return "rejected";
-
-  // 1.5 旧用户（仅有 points 字段）先迁移双池，保证 points === paidPoints + bonusPoints
-  await ensureDualPool(userId, user);
-
-  // 2. 同 user / 同 email / 同 device 已有成功记录 → 不重复发放
-  const whereOr: Array<Record<string, unknown>> = [{ userId, status: "granted" }];
-  if (email) whereOr.push({ email, status: "granted" });
-  if (deviceHash) whereOr.push({ deviceHash, status: "granted" });
-  const claimRes = await db
-    .collection(COLLECTIONS.BONUS_CLAIMS)
-    .where(cmd.or(...whereOr))
-    .limit(1)
-    .get();
-  if ((claimRes.data || []).length > 0) return "duplicate";
-
-  // 3. 条件原子更新（防并发重复发放）
-  const res = await db
-    .collection(COLLECTIONS.USERS)
-    .where({ _id: userId, registerBonusGranted: cmd.neq(true) })
-    .update({
-      bonusPoints: cmd.inc(bonus),
-      points: cmd.inc(bonus),
-      registerBonusGranted: true,
-      bonusStatus: "granted",
-      bonusGrantedAt: db.serverDate(),
-    });
-  if (res.updated !== 1) return "duplicate";
-
-  // 4. 写发放记录 + 积分流水
-  await db.collection(COLLECTIONS.BONUS_CLAIMS).add({
-    userId,
-    email: email || "",
-    deviceHash: deviceHash || null,
-    ip: ip || "",
-    status: "granted",
-    points: bonus,
-    createdAt: db.serverDate(),
-  });
-  await addPointLog(userId, "register_bonus", bonus, "注册赠送积分");
-  return "granted";
 }
 
 /**

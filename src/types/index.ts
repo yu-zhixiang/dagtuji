@@ -25,7 +25,11 @@ export interface User {
   /** 赠送积分（注册赠送等） */
   bonusPoints?: number;
   registerBonusGranted: boolean;
-  /** 赠送状态：granted 已发放 / rejected 已拒绝 / pending 待人工审核 */
+  /** 邮箱验证奖励是否已领取（150积分，独立于旧注册赠送） */
+  emailVerifyBonusGranted?: boolean;
+  /** 邮箱验证奖励领取时间 */
+  emailVerifyBonusGrantedAt?: Date | string;
+  /** 赠送状态：granted 已发放 / rejected 已拒绝 / pending 待人工审核（历史字段，仅作只读展示） */
   bonusStatus?: "granted" | "rejected" | "pending";
   /** 风控等级：normal 正常 / review 人工审核 / reject 拒绝赠送 */
   riskLevel?: "normal" | "review" | "reject";
@@ -112,6 +116,24 @@ export interface PointLog {
   points: number;
   remark: string;
   createdAt: Date | string;
+}
+
+/** 充值订单状态 */
+export type RechargeOrderStatus = "pending" | "paid" | "credited" | "failed";
+
+export interface RechargeOrder {
+  _id: string;
+  orderNo: string;
+  userId: string;
+  packageId: string;
+  amount: number; // 人民币金额（分）
+  points: number; // 赠送积分
+  status: RechargeOrderStatus;
+  /** 支付宝交易号 */
+  alipayTradeNo?: string;
+  createdAt: Date | string;
+  paidAt?: Date | string;
+  creditedAt?: Date | string;
 }
 
 export interface SessionUser {

@@ -3,6 +3,9 @@ export const SITE_NAME = "大图集";
 /** 注册赠送积分（仅一次，入 bonusPoints 池） */
 export const REGISTER_BONUS_POINTS = 200;
 
+/** 邮箱验证奖励积分（独立于注册赠送，验证后立即发放） */
+export const EMAIL_VERIFY_BONUS_POINTS = 150;
+
 /** 设备 Cookie 名称（HttpOnly、长期，库中只存 SHA-256 哈希） */
 export const DEVICE_ID_COOKIE = "dagtuji_device_id";
 /** 设备 Cookie 有效期（秒，默认 1 年） */
@@ -52,9 +55,60 @@ export const COLLECTIONS = {
   SMS_CODES: "sms_codes",
   EMAIL_CODES: "email_codes",
   BONUS_CLAIMS: "bonus_claims",
+  VERIFIED_EMAILS: "verified_emails",
+  RECHARGE_ORDERS: "recharge_orders",
   RISK_EVENTS: "risk_events",
   RATE_LIMITS: "rate_limits",
 } as const;
+
+/** 支付状态 */
+export type PayStatus = "pending" | "paid" | "credited" | "failed";
+export const PAY_STATUS_TEXT: Record<PayStatus, string> = {
+  pending: "待支付",
+  paid: "已支付",
+  credited: "已到账",
+  failed: "已失败",
+};
+
+/** 充值套餐配置（服务端权威数据，前端只传 packageId） */
+export type RechargePackage = {
+  id: string;
+  name: string;
+  amount: number; // 人民币金额（分）
+  points: number; // 赠送积分
+  remark?: string;
+};
+
+export const RECHARGE_PACKAGES: RechargePackage[] = [
+  {
+    id: "package_10",
+    name: "10 元套餐",
+    amount: 1000,
+    points: 1000,
+    remark: "充 10 得 1000",
+  },
+  {
+    id: "package_50",
+    name: "50 元套餐",
+    amount: 5000,
+    points: 5500,
+    remark: "充 50 得 5500（+10%）",
+  },
+  {
+    id: "package_100",
+    name: "100 元套餐",
+    amount: 10000,
+    points: 11000,
+    remark: "充 100 得 11000（+10%）",
+  },
+  {
+    id: "package_200",
+    name: "200 元套餐",
+    amount: 20000,
+    points: 23000,
+    remark: "充 200 得 23000（+15%）",
+  },
+];
 
 /** 赠送积分领取状态 */
 export type BonusClaimStatus = "granted" | "rejected" | "pending";
@@ -99,7 +153,9 @@ export type PointLogType =
   | "style_illustration"
   | "style_refund"
   | "recharge"
-  | "admin_adjust";
+  | "admin_adjust"
+  | "email_verify"
+  | "email_verify_bonus";
 
 export const POINT_LOG_TYPE_TEXT: Record<string, string> = {
   register_bonus: "注册赠送",
@@ -112,4 +168,6 @@ export const POINT_LOG_TYPE_TEXT: Record<string, string> = {
   style_refund: "风格退款",
   recharge: "充值",
   admin_adjust: "管理员调整",
+  email_verify: "邮箱验证奖励",
+  email_verify_bonus: "邮箱验证奖励",
 };

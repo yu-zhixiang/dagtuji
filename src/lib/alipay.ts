@@ -10,6 +10,18 @@ const ALIPAY_GATEWAY =
   process.env.ALIPAY_GATEWAY || "https://openapi-sandbox.dl.alipaydev.com/gateway.do";
 
 /**
+ * 私钥规范化：
+ * - trim 后若已包含 PEM 头，直接使用
+ * - 否则将纯 Base64 PKCS8 内容包装为标准 PEM 格式
+ * 不在任何日志中输出私钥原文。
+ */
+function normalizePrivateKey(raw: string): string {
+  const s = raw.trim();
+  if (s.includes("BEGIN PRIVATE KEY")) return s;
+  return `-----BEGIN PRIVATE KEY-----\n${s}\n-----END PRIVATE KEY-----`;
+}
+
+/**
  * 创建 SDK 实例（单例）
  */
 let sdk: AlipaySdk | null = null;
@@ -18,9 +30,10 @@ export function getAlipaySdk(): AlipaySdk {
   if (!sdk) {
     sdk = new AlipaySdk({
       appId: process.env.ALIPAY_APP_ID || "",
-      privateKey: process.env.ALIPAY_PRIVATE_KEY || "",
+      privateKey: normalizePrivateKey(process.env.ALIPAY_PRIVATE_KEY || ""),
       alipayPublicKey: process.env.ALIPAY_PUBLIC_KEY || "",
       gateway: ALIPAY_GATEWAY,
+      keyType: "PKCS8",
     });
   }
   return sdk;

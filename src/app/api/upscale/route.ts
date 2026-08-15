@@ -2,7 +2,8 @@ import { NextRequest } from "next/server";
 import { COLLECTIONS, UPSCALE_COST } from "@/lib/constants";
 import { getCloudbase, getDb } from "@/lib/cloudbase";
 import { requireUser } from "@/lib/server/auth";
-import { deductPoints } from "@/lib/server/points";
+import { assertUpscaleAllowed, deductPoints, recordOrderRisk } from "@/lib/server/points";
+import { getClientIp } from "@/lib/server/fraud";
 import { ApiError, handleApiError, json } from "@/lib/server/api";
 import { generateOrderNo } from "@/lib/utils";
 
@@ -25,8 +26,14 @@ export async function POST(req: NextRequest) {
     const db = getDb();
     const app = getCloudbase();
 
+    // 未充值用户高清大图体验限制（最多 1 张）
+    await assertUpscaleAllowed(session.id);
+
     // 服务端扣费（固定 100 积分）
     await deductPoints(session.id, UPSCALE_COST, "upscale", "高清大图制作");
+
+    // 下单风控检测（注册后批量下单提高风险值）
+    await recordOrderRisk({ userId: session.id, ip: getClientIp(req), orderType: "upscale" });
 
     const buffer = Buffer.from(await file.arrayBuffer());
     const ext = (file.name.split(".").pop() || "jpg").toLowerCase();

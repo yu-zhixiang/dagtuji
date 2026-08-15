@@ -7,7 +7,8 @@ import {
 } from "@/lib/constants";
 import { getDb } from "@/lib/cloudbase";
 import { requireUser } from "@/lib/server/auth";
-import { deductPoints } from "@/lib/server/points";
+import { deductPoints, recordOrderRisk } from "@/lib/server/points";
+import { getClientIp } from "@/lib/server/fraud";
 import { ApiError, handleApiError, json } from "@/lib/server/api";
 import { uploadFile } from "@/lib/server/storage";
 import { generateOrderNo, getFileExt } from "@/lib/utils";
@@ -98,6 +99,9 @@ export async function POST(req: NextRequest) {
     // 服务端扣费（固定 2 积分，条件原子扣减防超扣）
     const remark = `找图：${keyword.slice(0, 20)}${keyword.length > 20 ? "…" : ""}`;
     await deductPoints(session.id, FIND_IMAGE_COST, "generation", remark);
+
+    // 下单风控检测（注册后批量下单提高风险值）
+    await recordOrderRisk({ userId: session.id, ip: getClientIp(req), orderType: "find-image" });
 
     const order = {
       orderNo: generateOrderNo("GEN"),

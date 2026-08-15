@@ -34,13 +34,19 @@ export async function POST(req: NextRequest) {
       throw new ApiError(400, "用户名或密码错误");
     }
 
-    const points = Number(user.points || 0);
+    const paidPoints = Number(user.paidPoints ?? 0);
+    const bonusPoints = Number(user.bonusPoints ?? 0);
+    const points = Number(user.points || 0) || paidPoints + bonusPoints;
     await setSession({
       id: user._id as string,
       username,
       nickname: user.nickname as string | undefined,
+      email: user.email as string | undefined,
+      phone: user.phone as string | undefined,
       isAdmin: Boolean(user.isAdmin),
       points,
+      paidPoints,
+      bonusPoints,
     });
 
     return json({
@@ -49,8 +55,12 @@ export async function POST(req: NextRequest) {
         id: user._id,
         username,
         nickname: user.nickname,
+        email: user.email,
+        phone: user.phone,
         isAdmin: Boolean(user.isAdmin),
         points,
+        paidPoints,
+        bonusPoints,
       },
     });
   } catch (e) {

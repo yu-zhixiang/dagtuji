@@ -46,6 +46,11 @@ export function isValidUsername(username: string): boolean {
   return /^[a-zA-Z0-9_@.\u4e00-\u9fa5]{2,32}$/.test(username);
 }
 
+/** 校验中国大陆手机号格式 */
+export function isValidPhone(phone: string): boolean {
+  return /^1[3-9]\d{9}$/.test(phone);
+}
+
 /** 从文件名中提取扩展名（默认 jpg） */
 export function getFileExt(filename: string): string {
   const m = /\.([a-zA-Z0-9]+)$/.exec(filename);

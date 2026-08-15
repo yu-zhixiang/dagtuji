@@ -9,9 +9,32 @@ export interface User {
   _id: string;
   username: string;
   nickname?: string;
+  /** 注册邮箱（邮箱验证码验证） */
+  email?: string;
+  /** 邮箱是否已验证 */
+  emailVerified?: boolean;
+  /** 绑定手机号（历史字段，保留兼容） */
+  phone?: string;
+  /** 手机号是否已验证（历史字段） */
+  phoneVerified?: boolean;
   passwordHash?: string;
+  /** 总积分（历史字段，仍为 bonusPoints + paidPoints 合计） */
   points: number;
+  /** 充值积分（用户充值所得） */
+  paidPoints?: number;
+  /** 赠送积分（注册赠送等） */
+  bonusPoints?: number;
   registerBonusGranted: boolean;
+  /** 赠送状态：granted 已发放 / rejected 已拒绝 / pending 待人工审核 */
+  bonusStatus?: "granted" | "rejected" | "pending";
+  /** 风控等级：normal 正常 / review 人工审核 / reject 拒绝赠送 */
+  riskLevel?: "normal" | "review" | "reject";
+  /** 风控分 */
+  riskScore?: number;
+  /** 注册设备哈希（SHA-256） */
+  deviceHash?: string;
+  /** 注册 IP */
+  registerIp?: string;
   isAdmin: boolean;
   createdAt: Date | string;
 }
@@ -95,6 +118,13 @@ export interface SessionUser {
   id: string;
   username: string;
   nickname?: string;
+  email?: string;
+  phone?: string;
   isAdmin: boolean;
+  /** 总积分（bonusPoints + paidPoints 合计，兼容旧字段） */
   points: number;
+  /** 充值积分 */
+  paidPoints?: number;
+  /** 赠送积分 */
+  bonusPoints?: number;
 }

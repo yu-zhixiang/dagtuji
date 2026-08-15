@@ -7,6 +7,7 @@ const ADMIN_NAV = [
   { href: "/admin/orders", label: "找图订单" },
   { href: "/admin/upscale", label: "高清大图订单" },
   { href: "/admin/styles", label: "风格订单" },
+  { href: "/admin/review", label: "风控审核" },
 ];
 
 export default async function AdminLayout({

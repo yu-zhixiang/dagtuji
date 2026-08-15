@@ -8,7 +8,8 @@ import {
 } from "@/lib/constants";
 import { getCloudbase, getDb } from "@/lib/cloudbase";
 import { requireUser } from "@/lib/server/auth";
-import { deductPoints } from "@/lib/server/points";
+import { deductPoints, recordOrderRisk } from "@/lib/server/points";
+import { getClientIp } from "@/lib/server/fraud";
 import { ApiError, handleApiError, json } from "@/lib/server/api";
 import { generateOrderNo } from "@/lib/utils";
 
@@ -42,6 +43,9 @@ export async function POST(req: NextRequest) {
 
     // 服务端扣费（固定 10 积分）
     await deductPoints(session.id, cost, pointLogType, typeText);
+
+    // 下单风控检测（注册后批量下单提高风险值）
+    await recordOrderRisk({ userId: session.id, ip: getClientIp(req), orderType: styleType });
 
     const buffer = Buffer.from(await file.arrayBuffer());
     const ext = (file.name.split(".").pop() || "jpg").toLowerCase();

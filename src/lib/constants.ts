@@ -1,7 +1,21 @@
 export const SITE_NAME = "大图集";
 
-/** 注册赠送积分（仅一次） */
+/** 注册赠送积分（仅一次，入 bonusPoints 池） */
 export const REGISTER_BONUS_POINTS = 200;
+
+/** 设备 Cookie 名称（HttpOnly、长期，库中只存 SHA-256 哈希） */
+export const DEVICE_ID_COOKIE = "dagtuji_device_id";
+/** 设备 Cookie 有效期（秒，默认 1 年） */
+export const DEVICE_ID_MAX_AGE = 365 * 24 * 3600;
+
+/** 风控阈值：低于 NORMAL 直接发放，REVIEW 进入人工审核，REJECT 拒绝发放 */
+export const RISK_SCORE_NORMAL = 40;
+export const RISK_SCORE_REVIEW = 80;
+
+/** 风控：近 24h 同 IP 注册数阈值 */
+export const RISK_IP_REGISTER_LIMIT = 5;
+/** 风控：同一设备关联账号数阈值 */
+export const RISK_DEVICE_USER_LIMIT = 3;
 /** 找图单次消耗积分 */
 export const FIND_IMAGE_COST = 2;
 /** 高清大图消耗积分 */
@@ -35,7 +49,17 @@ export const COLLECTIONS = {
   UPSCALE_ORDERS: "upscale_orders",
   STYLE_ORDERS: "style_orders",
   POINT_LOGS: "point_logs",
+  SMS_CODES: "sms_codes",
+  EMAIL_CODES: "email_codes",
+  BONUS_CLAIMS: "bonus_claims",
+  RISK_EVENTS: "risk_events",
+  RATE_LIMITS: "rate_limits",
 } as const;
+
+/** 赠送积分领取状态 */
+export type BonusClaimStatus = "granted" | "rejected" | "pending";
+/** 风控等级 */
+export type RiskLevel = "normal" | "review" | "reject";
 
 export type OrderStatus = "pending" | "processing" | "completed" | "failed";
 

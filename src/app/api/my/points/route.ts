@@ -11,10 +11,16 @@ export async function GET() {
     const session = await requireUser();
     const db = getDb();
 
-    // 获取当前积分（实时从库读取）
+    // 获取当前积分（实时从库读取，双池展示）
     const userRes = await db.collection(COLLECTIONS.USERS).doc(session.id).get();
     const user = userRes.data as Record<string, unknown> | undefined;
-    const points = Number(user?.points || 0);
+    const paidPoints = Number(user?.paidPoints ?? 0);
+    const bonusPoints = Number(user?.bonusPoints ?? 0);
+    const points = Number(user?.points ?? 0) || paidPoints + bonusPoints;
+    const bonusStatus = String(user?.bonusStatus || "pending") as
+      | "granted"
+      | "rejected"
+      | "pending";
 
     // 流水
     const logsRes = await db
@@ -25,7 +31,7 @@ export async function GET() {
       .get();
     const logs = (logsRes.data as Record<string, unknown>[] | undefined) || [];
 
-    return json({ points, logs });
+    return json({ points, paidPoints, bonusPoints, bonusStatus, logs });
   } catch (e) {
     return handleApiError(e);
   }

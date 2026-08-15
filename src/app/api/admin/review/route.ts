@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { COLLECTIONS, REGISTER_BONUS_POINTS, type BonusClaimStatus } from "@/lib/constants";
-import { getCmd, getDb } from "@/lib/cloudbase";
+import { getCmd, getDb, unwrapDoc } from "@/lib/cloudbase";
 import { requireAdmin } from "@/lib/server/auth";
 import { ApiError, handleApiError, json } from "@/lib/server/api";
 import { claimRegisterBonus } from "@/lib/server/points";
@@ -67,7 +67,7 @@ export async function PATCH(req: NextRequest) {
     const db = getDb();
     const cmd = getCmd();
     const userRes = await db.collection(COLLECTIONS.USERS).doc(userId).get();
-    const user = userRes.data as Record<string, unknown> | undefined;
+    const user = unwrapDoc(userRes);
     if (!user) throw new ApiError(404, "用户不存在");
 
     if (action === "approve") {

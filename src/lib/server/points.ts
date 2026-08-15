@@ -1,5 +1,5 @@
 import { COLLECTIONS, type PointLogType } from "@/lib/constants";
-import { getCmd, getDb } from "@/lib/cloudbase";
+import { getCmd, getDb, unwrapDoc } from "@/lib/cloudbase";
 import { ApiError } from "./api";
 
 export type PointPool = "auto" | "paid" | "bonus";
@@ -33,7 +33,7 @@ export async function getUserPoints(userId: string): Promise<{
 }> {
   const db = getDb();
   const res = await db.collection(COLLECTIONS.USERS).doc(userId).get();
-  const user = res.data as Record<string, unknown> | undefined;
+  const user = unwrapDoc(res);
   if (!user) throw new ApiError(404, "用户不存在");
   return normalizePoints(user);
 }
@@ -310,7 +310,7 @@ export async function claimRegisterBonus(params: {
 
   // 1. 用户已标记拒绝 → 不可领取
   const userRes = await db.collection(COLLECTIONS.USERS).doc(userId).get();
-  const user = userRes.data as Record<string, unknown> | undefined;
+  const user = unwrapDoc(userRes);
   if (!user) throw new ApiError(404, "用户不存在");
   if (user.bonusStatus === "rejected") return "rejected";
 
@@ -446,7 +446,7 @@ export async function refundOnce(
 
   // 读取订单原始扣费明细（原路退回）
   const orderRes = await db.collection(collectionName).doc(orderId).get();
-  const order = orderRes.data as Record<string, unknown> | undefined;
+  const order = unwrapDoc(orderRes);
   const costPaid = order?.costPaid;
   const costBonus = order?.costBonus;
   const split =

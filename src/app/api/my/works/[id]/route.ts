@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { COLLECTIONS } from "@/lib/constants";
-import { getDb } from "@/lib/cloudbase";
+import { getDb, unwrapDoc } from "@/lib/cloudbase";
 import { requireUser } from "@/lib/server/auth";
 import { ApiError, handleApiError, json } from "@/lib/server/api";
 
@@ -24,7 +24,7 @@ export async function GET(
       COLLECTIONS.UPSCALE_ORDERS,
     ]) {
       const res = await db.collection(collection).doc(id).get();
-      const order = res.data as Record<string, unknown> | undefined;
+      const order = unwrapDoc(res);
       if (!order || !order._id) continue;
 
       if (String(order.userId) !== session.id && !session.isAdmin) {

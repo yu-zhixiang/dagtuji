@@ -4,7 +4,7 @@ import {
   STYLE_ILLUSTRATION_COST,
   STYLE_OIL_COST,
 } from "@/lib/constants";
-import { getCloudbase, getDb } from "@/lib/cloudbase";
+import { getCloudbase, getDb, unwrapDoc } from "@/lib/cloudbase";
 import { requireAdmin } from "@/lib/server/auth";
 import { createWatermarkedPreview } from "@/lib/server/images";
 import { refundOnce } from "@/lib/server/points";
@@ -27,7 +27,7 @@ export async function PATCH(
     const db = getDb();
 
     const orderRes = await db.collection(COLLECTIONS.STYLE_ORDERS).doc(id).get();
-    const order = orderRes.data as Record<string, unknown> | undefined;
+    const order = unwrapDoc(orderRes);
     if (!order || !order._id) throw new ApiError(404, "订单不存在");
 
     if (action === "processing") {
@@ -85,7 +85,7 @@ export async function POST(
     const app = getCloudbase();
 
     const orderRes = await db.collection(COLLECTIONS.STYLE_ORDERS).doc(id).get();
-    const order = orderRes.data as Record<string, unknown> | undefined;
+    const order = unwrapDoc(orderRes);
     if (!order || !order._id) throw new ApiError(404, "订单不存在");
 
     const formData = await req.formData();

@@ -20,8 +20,6 @@ export default function PointsViewer() {
   const [logs, setLogs] = useState<LogItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [claiming, setClaiming] = useState(false);
-  const [claimMsg, setClaimMsg] = useState("");
 
   function load() {
     fetch("/api/my/points")
@@ -43,29 +41,6 @@ export default function PointsViewer() {
   useEffect(() => {
     load();
   }, []);
-
-  async function handleClaim() {
-    setClaiming(true);
-    setClaimMsg("");
-    try {
-      const res = await fetch("/api/auth/claim-bonus", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({}),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setClaimMsg(data.error || "领取失败");
-      } else {
-        setClaimMsg("领取成功");
-        load();
-      }
-    } catch {
-      setClaimMsg("网络错误，请稍后再试");
-    } finally {
-      setClaiming(false);
-    }
-  }
 
   if (loading) {
     return (
@@ -108,26 +83,8 @@ export default function PointsViewer() {
           <p className="text-sm text-zinc-400">
             {bonusStatus === "rejected"
               ? "注册赠送已被拒绝"
-              : "注册赠送积分尚未到账"}
+              : "注册赠送积分审核中，请耐心等待"}
           </p>
-          {bonusStatus === "pending" && (
-            <button
-              onClick={handleClaim}
-              disabled={claiming}
-              className="btn-primary mt-3"
-            >
-              {claiming ? "领取中…" : "领取注册赠送积分"}
-            </button>
-          )}
-          {claimMsg && (
-            <p
-              className={`mt-2 text-xs ${
-                claimMsg === "领取成功" ? "text-emerald-400" : "text-red-400"
-              }`}
-            >
-              {claimMsg}
-            </p>
-          )}
         </div>
       )}
 

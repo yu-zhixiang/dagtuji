@@ -30,3 +30,23 @@ export function getDb() {
 export function getCmd() {
   return getDb().command;
 }
+
+/**
+ * 归一化 doc().get() 的返回结果。
+ * 普通模式（非事务）返回 res.data 为数组，单文档位于 data[0]；
+ * 事务模式返回 res.data 为文档对象（或 null）。
+ * 统一兼容两种形态，避免 SDK 差异导致字段读取失败。
+ * @returns 文档对象；未命中时返回 undefined
+ */
+export function unwrapDoc<T extends Record<string, unknown> = Record<string, unknown>>(
+  res: { data?: unknown } | undefined | null
+): T | undefined {
+  const data = res?.data;
+  if (Array.isArray(data)) {
+    return (data[0] as T | undefined) ?? undefined;
+  }
+  if (data && typeof data === "object") {
+    return data as T;
+  }
+  return undefined;
+}

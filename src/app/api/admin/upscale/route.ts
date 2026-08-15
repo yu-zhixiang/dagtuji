@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { COLLECTIONS } from "@/lib/constants";
-import { getDb } from "@/lib/cloudbase";
+import { getDb, unwrapDoc } from "@/lib/cloudbase";
 import { requireAdmin } from "@/lib/server/auth";
 import { handleApiError, json } from "@/lib/server/api";
 
@@ -40,9 +40,9 @@ export async function GET(req: NextRequest) {
             .collection(COLLECTIONS.GENERATION_ORDERS)
             .doc(String(item.generationOrderId))
             .get();
-          const gen = genRes.data as
-            | (Record<string, unknown> & { originalImages?: string[] })
-            | undefined;
+          const gen = unwrapDoc<Record<string, unknown> & { originalImages?: string[] }>(
+            genRes
+          );
           item.sourceOriginalImages = gen?.originalImages || [];
         } catch {
           item.sourceOriginalImages = [];

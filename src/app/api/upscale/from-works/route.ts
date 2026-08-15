@@ -4,7 +4,7 @@ import {
   UPSCALE_COST,
   type UpscaleSourceType,
 } from "@/lib/constants";
-import { getDb } from "@/lib/cloudbase";
+import { getDb, unwrapDoc } from "@/lib/cloudbase";
 import { requireUser } from "@/lib/server/auth";
 import { assertUpscaleAllowed, deductPoints, recordOrderRisk } from "@/lib/server/points";
 import { getClientIp } from "@/lib/server/fraud";
@@ -45,9 +45,9 @@ export async function POST(req: NextRequest) {
         .collection(COLLECTIONS.GENERATION_ORDERS)
         .doc(generationOrderId)
         .get();
-      const order = res.data as
-        | (Record<string, unknown> & { userId?: string; previewImages?: string[] })
-        | undefined;
+      const order = unwrapDoc<Record<string, unknown> & { userId?: string; previewImages?: string[] }>(
+        res
+      );
       if (!order || order.userId !== session.id) {
         throw new ApiError(403, "无权操作该作品");
       }
@@ -65,9 +65,9 @@ export async function POST(req: NextRequest) {
         .collection(COLLECTIONS.STYLE_ORDERS)
         .doc(styleOrderId)
         .get();
-      const order = res.data as
-        | (Record<string, unknown> & { userId?: string; previewImageUrl?: string })
-        | undefined;
+      const order = unwrapDoc<Record<string, unknown> & { userId?: string; previewImageUrl?: string }>(
+        res
+      );
       if (!order || order.userId !== session.id) {
         throw new ApiError(403, "无权操作该作品");
       }

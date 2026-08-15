@@ -92,7 +92,11 @@ export async function sendEmailCode(email: string): Promise<{
     createdAt: new Date(),
   });
 
-  return { ok: true, message: "验证码已发送至邮箱" };
+  return {
+    ok: true,
+    message: "验证码已发送至邮箱",
+    verificationId: String(data.verification_id),
+  };
 }
 
 /**
@@ -108,8 +112,8 @@ export async function verifyEmailCode(params: {
   const db = getDb();
   const { email, code, verificationId } = params;
 
-  // 本地模拟模式
-  if (!isEmailCodeConfigured() || !verificationId) {
+  // 本地模拟模式（未配置 CloudBase 时，仅开发调试）
+  if (!isEmailCodeConfigured()) {
     const res = await db
       .collection(COLLECTIONS.EMAIL_CODES)
       .where({ email, code, purpose: "register", used: false })
@@ -122,6 +126,12 @@ export async function verifyEmailCode(params: {
     if (Date.now() > expiresAt) return false;
     await db.collection(COLLECTIONS.EMAIL_CODES).doc(rec._id as string).update({ used: true });
     return true;
+  }
+
+  // 生产环境已配置 CloudBase：verificationId 丢失时直接判失败，
+  // 不退回本地模拟验证码分支（本地模拟分支只应在未配置时启用）
+  if (!verificationId) {
+    return false;
   }
 
   // CloudBase verify 接口
@@ -144,5 +154,13 @@ export async function verifyEmailCode(params: {
       .catch(() => undefined);
     return true;
   }
+
+  // 验证失败时记录安全日志：仅含响应状态与错误信息，不记录密钥/验证码/verification token
+  console.error("[email-code] CloudBase verify failed", {
+    status: resp.status,
+    error: data?.error || undefined,
+    error_code: data?.error_code || undefined,
+    error_description: data?.error_description || undefined,
+  });
   return false;
 }

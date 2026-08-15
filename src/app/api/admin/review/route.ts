@@ -34,7 +34,12 @@ export async function GET(req: NextRequest) {
       riskScore: Number(u.riskScore || 0),
       riskLevel: u.riskLevel || "normal",
       bonusStatus: u.bonusStatus || "pending",
-      points: Number(u.points || 0),
+      // 双池字段均存在才以双池之和为合计，points 总字段可能为陈旧值；
+      // 只存在一个双池字段时视为异常数据，不自动把缺失字段当 0，回落显示历史 points
+      points:
+        u.paidPoints !== undefined && u.bonusPoints !== undefined
+          ? Number(u.paidPoints || 0) + Number(u.bonusPoints || 0)
+          : Number(u.points || 0),
       paidPoints: Number(u.paidPoints || 0),
       bonusPoints: Number(u.bonusPoints || 0),
       createdAt: u.createdAt,

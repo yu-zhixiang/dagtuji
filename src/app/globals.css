@@ -135,6 +135,12 @@ body {
   color: #71717a;
 }
 
+/* Turnstile 人机验证容器 */
+.turnstile-widget {
+  min-height: 65px;
+  margin-bottom: 0.25rem;
+}
+
 /* 状态徽章 */
 .badge {
   display: inline-flex;

@@ -36,7 +36,14 @@ export async function POST(req: NextRequest) {
 
     const paidPoints = Number(user.paidPoints ?? 0);
     const bonusPoints = Number(user.bonusPoints ?? 0);
-    const points = Number(user.points || 0) || paidPoints + bonusPoints;
+    // 双池字段均存在才以双池之和为准（points 总字段可能是陈旧值）；
+    // 旧用户（两个双池字段都不存在）才信任历史 points 字段；
+    // 只存在一个双池字段时视为异常数据，不自动把缺失字段当 0，回落显示历史 points
+    const hasDualPool =
+      user.paidPoints !== undefined && user.bonusPoints !== undefined;
+    const points = hasDualPool
+      ? paidPoints + bonusPoints
+      : Number(user.points || 0);
     await setSession({
       id: user._id as string,
       username,

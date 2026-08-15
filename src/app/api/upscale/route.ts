@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
     await assertUpscaleAllowed(session.id);
 
     // 服务端扣费（固定 100 积分）
-    await deductPoints(session.id, UPSCALE_COST, "upscale", "高清大图制作");
+    const deduct = await deductPoints(session.id, UPSCALE_COST, "upscale", "高清大图制作");
 
     // 下单风控检测（注册后批量下单提高风险值）
     await recordOrderRisk({ userId: session.id, ip: getClientIp(req), orderType: "upscale" });
@@ -48,6 +48,9 @@ export async function POST(req: NextRequest) {
       sourceImageUrl: fileId,
       originalFileName: file.name,
       costPoints: UPSCALE_COST,
+      // 原扣费明细（退款时原路退回）
+      costPaid: deduct.paidDeducted,
+      costBonus: deduct.bonusDeducted,
       status: "pending",
       refunded: false,
       createdAt: db.serverDate(),

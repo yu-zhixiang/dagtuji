@@ -98,7 +98,7 @@ export async function POST(req: NextRequest) {
 
     // 服务端扣费（固定 2 积分，条件原子扣减防超扣）
     const remark = `找图：${keyword.slice(0, 20)}${keyword.length > 20 ? "…" : ""}`;
-    await deductPoints(session.id, FIND_IMAGE_COST, "generation", remark);
+    const deduct = await deductPoints(session.id, FIND_IMAGE_COST, "generation", remark);
 
     // 下单风控检测（注册后批量下单提高风险值）
     await recordOrderRisk({ userId: session.id, ip: getClientIp(req), orderType: "find-image" });
@@ -112,6 +112,9 @@ export async function POST(req: NextRequest) {
       customRatioHeight: ratio === "custom" ? customRatioHeight : undefined,
       quantity,
       costPoints: FIND_IMAGE_COST,
+      // 原扣费明细（退款时原路退回）
+      costPaid: deduct.paidDeducted,
+      costBonus: deduct.bonusDeducted,
       // 用户上传的参考图（可选），仅本人与管理员可见
       referenceImageUrl: referenceFileId,
       status: "pending",

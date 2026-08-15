@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
     const app = getCloudbase();
 
     // 服务端扣费（固定 10 积分）
-    await deductPoints(session.id, cost, pointLogType, typeText);
+    const deduct = await deductPoints(session.id, cost, pointLogType, typeText);
 
     // 下单风控检测（注册后批量下单提高风险值）
     await recordOrderRisk({ userId: session.id, ip: getClientIp(req), orderType: styleType });
@@ -60,6 +60,9 @@ export async function POST(req: NextRequest) {
       sourceImageUrl: fileId,
       originalFileName: file.name,
       costPoints: cost,
+      // 原扣费明细（退款时原路退回）
+      costPaid: deduct.paidDeducted,
+      costBonus: deduct.bonusDeducted,
       status: "pending",
       refunded: false,
       createdAt: db.serverDate(),

@@ -55,7 +55,7 @@ type Tx = {
  *   C. emailVerified=false → 新用户，正常验证后领取
  */
 export async function POST(req: NextRequest): Promise<Response> {
-  return handleApiError(async () => {
+  try {
     const session = await requireUser();
     const body = await req.json().catch(() => null);
     const email = String(body?.email || "").trim().toLowerCase();
@@ -195,5 +195,7 @@ export async function POST(req: NextRequest): Promise<Response> {
       message: "邮箱验证成功，已发放 " + EMAIL_VERIFY_BONUS_POINTS + " 积分",
       points: EMAIL_VERIFY_BONUS_POINTS,
     });
-  });
+  } catch (e) {
+    return handleApiError(e);
+  }
 }

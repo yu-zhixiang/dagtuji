@@ -29,7 +29,7 @@ export const runtime = "nodejs";
  * 邮箱相关处理完全移除：注册不再接受邮箱，积分中心邮箱验证奖励由 /api/my/verify-email 单独发放。
  */
 export async function POST(req: NextRequest): Promise<Response> {
-  return handleApiError(async () => {
+  try {
     const body = await req.json().catch(() => null);
     const username = String(body?.username || "").trim();
     const password = String(body?.password || "");
@@ -140,5 +140,7 @@ export async function POST(req: NextRequest): Promise<Response> {
     });
     setDeviceIdCookie(resp, rawDeviceId);
     return resp;
-  });
+  } catch (e) {
+    return handleApiError(e);
+  }
 }

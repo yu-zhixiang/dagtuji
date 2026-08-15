@@ -23,7 +23,7 @@ function emailHash(normalizedEmail: string): string {
  *   任一命中且非本用户 → 拒绝发送
  */
 export async function POST(req: NextRequest): Promise<Response> {
-  return handleApiError(async () => {
+  try {
     const session = await requireUser();
     const body = await req.json().catch(() => null);
     const email = String(body?.email || "").trim().toLowerCase();
@@ -84,5 +84,7 @@ export async function POST(req: NextRequest): Promise<Response> {
       verificationId: result.verificationId,
       devCode: result.devCode,
     });
-  });
+  } catch (e) {
+    return handleApiError(e);
+  }
 }

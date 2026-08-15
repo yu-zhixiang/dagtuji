@@ -16,7 +16,7 @@ export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ orderNo: string }> }
 ): Promise<Response> {
-  return handleApiError(async () => {
+  try {
     const session = await requireUser();
     const { orderNo } = await params;
 
@@ -144,5 +144,7 @@ export async function GET(
       status: order.status,
       points: Number(order.points),
     });
-  });
+  } catch (e) {
+    return handleApiError(e);
+  }
 }

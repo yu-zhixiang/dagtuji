@@ -16,7 +16,7 @@ import { generateOrderNo, buildPagePayUrl } from "@/lib/alipay";
  * - return_url 不作为积分到账依据
  */
 export async function POST(req: NextRequest): Promise<Response> {
-  return handleApiError(async () => {
+  try {
     const session = await requireUser();
     // 沙箱阶段限制：仅管理员可充值
     if (process.env.ALIPAY_MODE === "sandbox" && !session.isAdmin) {
@@ -56,7 +56,7 @@ export async function POST(req: NextRequest): Promise<Response> {
       userId: session.id,
       packageId: pkg.id,
       amount: pkg.amount, // 人民币金额（分）
-      points: pkg.points, // 赠送积分
+      points: pkg.points, // 充值积分
       status: "pending",
       createdAt: now,
     });
@@ -78,5 +78,7 @@ export async function POST(req: NextRequest): Promise<Response> {
       points: pkg.points,
       packageName: pkg.name,
     });
-  });
+  } catch (e) {
+    return handleApiError(e);
+  }
 }

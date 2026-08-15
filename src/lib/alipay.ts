@@ -50,31 +50,43 @@ export function generateOrderNo(): string {
 
 /**
  * 生成 PC 端支付 URL（alipay.trade.page.pay）
+ * 业务参数必须在 bizContent 内；notify_url / return_url 为回调地址，放顶层。
  */
 export function buildPagePayUrl(orderNo: string, totalAmount: string, subject: string): string {
   const sdk = getAlipaySdk();
+  const siteUrl = process.env.SITE_URL;
+  if (!siteUrl) throw new Error("SITE_URL 未配置");
+
   return sdk.pageExecute("alipay.trade.page.pay", "GET", {
-    out_trade_no: orderNo,
-    total_amount: totalAmount,
-    subject: subject,
-    product_code: "FAST_INSTANT_TRADE_PAY",
-    notify_url: `${process.env.SITE_URL}/api/pay/alipay/notify`,
-    return_url: `${process.env.SITE_URL}/my/points?recharge=success`,
+    bizContent: {
+      out_trade_no: orderNo,
+      total_amount: totalAmount,
+      subject,
+      product_code: "FAST_INSTANT_TRADE_PAY",
+    },
+    notify_url: `${siteUrl}/api/pay/alipay/notify`,
+    return_url: `${siteUrl}/my/points?recharge=success`,
   });
 }
 
 /**
  * 生成手机 H5 支付 URL（alipay.trade.wap.pay）
+ * product_code 使用 WAP 专用值 MERCHANT_CHANNEL；业务参数须在 bizContent 内。
  */
 export function buildWapPayUrl(orderNo: string, totalAmount: string, subject: string): string {
   const sdk = getAlipaySdk();
+  const siteUrl = process.env.SITE_URL;
+  if (!siteUrl) throw new Error("SITE_URL 未配置");
+
   return sdk.pageExecute("alipay.trade.wap.pay", "GET", {
-    out_trade_no: orderNo,
-    total_amount: totalAmount,
-    subject: subject,
-    product_code: "FAST_INSTANT_TRADE_PAY",
-    notify_url: `${process.env.SITE_URL}/api/pay/alipay/notify`,
-    return_url: `${process.env.SITE_URL}/my/points?recharge=success`,
+    bizContent: {
+      out_trade_no: orderNo,
+      total_amount: totalAmount,
+      subject,
+      product_code: "MERCHANT_CHANNEL",
+    },
+    notify_url: `${siteUrl}/api/pay/alipay/notify`,
+    return_url: `${siteUrl}/my/points?recharge=success`,
   });
 }
 
@@ -137,9 +149,10 @@ export async function queryPaymentStatus(
       return { success: false, tradeStatus: "UNKNOWN", message: result.msg || result.sub_msg || "查询失败" };
     }
 
-    // 归一化 trade_status
+    // 归一化 trade_status（兼容 SDK camelcase=true 的 tradeStatus / 原始 trade_status）
+    const rawTradeStatus = result.tradeStatus || result.trade_status;
     let tradeStatus: "SUCCESS" | "PENDING" | "CLOSED" | "UNKNOWN";
-    switch (result.trade_status) {
+    switch (rawTradeStatus) {
       case "TRADE_SUCCESS":
       case "TRADE_FINISHED":
         tradeStatus = "SUCCESS";

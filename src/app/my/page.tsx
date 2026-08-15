@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/session";
+import CurrentPoints from "@/components/my/CurrentPoints";
 
 export const metadata = { title: "个人中心" };
 
@@ -32,7 +33,7 @@ export default async function MyPage() {
             )}
           </p>
           <p className="mt-2 text-amber-300">
-            ✦ {session.points} 积分
+            ✦ <CurrentPoints /> 积分
           </p>
         </div>
       </div>

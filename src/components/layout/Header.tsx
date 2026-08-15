@@ -3,6 +3,7 @@ import LogoutButton from "@/components/ui/LogoutButton";
 import MobileMenu from "./MobileMenu";
 import { getSession } from "@/lib/session";
 import { SITE_NAME } from "@/lib/constants";
+import CurrentPoints from "@/components/my/CurrentPoints";
 
 const NAV = [
   { href: "/find-image", label: "找图" },
@@ -62,7 +63,7 @@ export default async function Header() {
                 className="hidden items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-sm text-amber-300 sm:flex"
               >
                 <span className="text-base leading-none">✦</span>
-                {session.points} 积分
+                <CurrentPoints /> 积分
               </Link>
               {session.isAdmin && (
                 <Link

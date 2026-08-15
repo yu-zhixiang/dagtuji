@@ -1,0 +1,170 @@
+[35msrc/app/api/admin/orders/[id]/route.ts[m[36m:[m[32m6[m[36m:[mimport { refundOnce } from "@/lib/server/[1;31mpoints[m";
+[35msrc/app/api/admin/review/route.ts[m[36m:[m[32m43[m[36m:[m      const [1;31mpaidPoints[m = Number(u.[1;31mpaidPoints[m ?? 0);
+[35msrc/app/api/admin/review/route.ts[m[36m:[m[32m44[m[36m:[m      const [1;31mbonusPoints[m = Number(u.[1;31mbonusPoints[m ?? 0);
+[35msrc/app/api/admin/review/route.ts[m[36m:[m[32m46[m[36m:[m        u.[1;31mpaidPoints[m !== undefined && u.[1;31mbonusPoints[m !== undefined;
+[35msrc/app/api/admin/review/route.ts[m[36m:[m[32m47[m[36m:[m      const [1;31mpoints[m = hasDualPool
+[35msrc/app/api/admin/review/route.ts[m[36m:[m[32m48[m[36m:[m        ? [1;31mpaidPoints[m + [1;31mbonusPoints[m
+[35msrc/app/api/admin/review/route.ts[m[36m:[m[32m49[m[36m:[m        : Number(u.[1;31mpoints[m ?? 0);
+[35msrc/app/api/admin/review/route.ts[m[36m:[m[32m59[m[36m:[m        [1;31mpoints[m,
+[35msrc/app/api/admin/review/route.ts[m[36m:[m[32m60[m[36m:[m        [1;31mpaidPoints[m,
+[35msrc/app/api/admin/review/route.ts[m[36m:[m[32m61[m[36m:[m        [1;31mbonusPoints[m,
+[35msrc/app/api/admin/styles/[id]/route.ts[m[36m:[m[32m10[m[36m:[mimport { refundOnce } from "@/lib/server/[1;31mpoints[m";
+[35msrc/app/api/admin/upscale/[id]/route.ts[m[36m:[m[32m5[m[36m:[mimport { refundOnce } from "@/lib/server/[1;31mpoints[m";
+[35msrc/app/api/auth/login/route.ts[m[36m:[m[32m37[m[36m:[m    const [1;31mpaidPoints[m = Number(user.[1;31mpaidPoints[m ?? 0);
+[35msrc/app/api/auth/login/route.ts[m[36m:[m[32m38[m[36m:[m    const [1;31mbonusPoints[m = Number(user.[1;31mbonusPoints[m ?? 0);
+[35msrc/app/api/auth/login/route.ts[m[36m:[m[32m39[m[36m:[m    // 双池字段均存在才以双池之和为准（[1;31mpoints[m 总字段可能是陈旧值）；
+[35msrc/app/api/auth/login/route.ts[m[36m:[m[32m40[m[36m:[m    // 旧用户（两个双池字段都不存在）才信任历史 [1;31mpoints[m 字段；
+[35msrc/app/api/auth/login/route.ts[m[36m:[m[32m41[m[36m:[m    // 只存在一个双池字段时视为异常数据，不自动把缺失字段当 0，回落显示历史 [1;31mpoints[m
+[35msrc/app/api/auth/login/route.ts[m[36m:[m[32m43[m[36m:[m      user.[1;31mpaidPoints[m !== undefined && user.[1;31mbonusPoints[m !== undefined;
+[35msrc/app/api/auth/login/route.ts[m[36m:[m[32m44[m[36m:[m    const [1;31mpoints[m = hasDualPool
+[35msrc/app/api/auth/login/route.ts[m[36m:[m[32m45[m[36m:[m      ? [1;31mpaidPoints[m + [1;31mbonusPoints[m
+[35msrc/app/api/auth/login/route.ts[m[36m:[m[32m46[m[36m:[m      : Number(user.[1;31mpoints[m || 0);
+[35msrc/app/api/auth/login/route.ts[m[36m:[m[32m54[m[36m:[m      [1;31mpoints[m,
+[35msrc/app/api/auth/login/route.ts[m[36m:[m[32m55[m[36m:[m      [1;31mpaidPoints[m,
+[35msrc/app/api/auth/login/route.ts[m[36m:[m[32m56[m[36m:[m      [1;31mbonusPoints[m,
+[35msrc/app/api/auth/login/route.ts[m[36m:[m[32m68[m[36m:[m        [1;31mpoints[m,
+[35msrc/app/api/auth/login/route.ts[m[36m:[m[32m69[m[36m:[m        [1;31mpaidPoints[m,
+[35msrc/app/api/auth/login/route.ts[m[36m:[m[32m70[m[36m:[m        [1;31mbonusPoints[m,
+[35msrc/app/api/auth/register/route.ts[m[36m:[m[32m89[m[36m:[m      [1;31mpoints[m: 0,
+[35msrc/app/api/auth/register/route.ts[m[36m:[m[32m90[m[36m:[m      [1;31mpaidPoints[m: 0,
+[35msrc/app/api/auth/register/route.ts[m[36m:[m[32m91[m[36m:[m      [1;31mbonusPoints[m: 0,
+[35msrc/app/api/auth/register/route.ts[m[36m:[m[32m122[m[36m:[m      [1;31mpoints[m: 0,
+[35msrc/app/api/auth/register/route.ts[m[36m:[m[32m123[m[36m:[m      [1;31mpaidPoints[m: 0,
+[35msrc/app/api/auth/register/route.ts[m[36m:[m[32m124[m[36m:[m      [1;31mbonusPoints[m: 0,
+[35msrc/app/api/auth/register/route.ts[m[36m:[m[32m136[m[36m:[m        [1;31mpoints[m: 0,
+[35msrc/app/api/auth/register/route.ts[m[36m:[m[32m137[m[36m:[m        [1;31mpaidPoints[m: 0,
+[35msrc/app/api/auth/register/route.ts[m[36m:[m[32m138[m[36m:[m        [1;31mbonusPoints[m: 0,
+[35msrc/app/api/find-image/route.ts[m[36m:[m[32m10[m[36m:[mimport { deductPoints, recordOrderRisk } from "@/lib/server/[1;31mpoints[m";
+[35msrc/app/api/my/points/route.ts[m[36m:[m[32m17[m[36m:[m    const [1;31mpaidPoints[m = Number(user?.[1;31mpaidPoints[m ?? 0);
+[35msrc/app/api/my/points/route.ts[m[36m:[m[32m18[m[36m:[m    const [1;31mbonusPoints[m = Number(user?.[1;31mbonusPoints[m ?? 0);
+[35msrc/app/api/my/points/route.ts[m[36m:[m[32m19[m[36m:[m    // 双池字段均存在才以双池之和为准（[1;31mpoints[m 总字段可能是陈旧值）；
+[35msrc/app/api/my/points/route.ts[m[36m:[m[32m20[m[36m:[m    // 旧用户（两个双池字段都不存在）才信任历史 [1;31mpoints[m 字段；
+[35msrc/app/api/my/points/route.ts[m[36m:[m[32m21[m[36m:[m    // 只存在一个双池字段时视为异常数据，不自动把缺失字段当 0，回落显示历史 [1;31mpoints[m
+[35msrc/app/api/my/points/route.ts[m[36m:[m[32m23[m[36m:[m      user?.[1;31mpaidPoints[m !== undefined && user?.[1;31mbonusPoints[m !== undefined;
+[35msrc/app/api/my/points/route.ts[m[36m:[m[32m24[m[36m:[m    const [1;31mpoints[m = hasDualPool
+[35msrc/app/api/my/points/route.ts[m[36m:[m[32m25[m[36m:[m      ? [1;31mpaidPoints[m + [1;31mbonusPoints[m
+[35msrc/app/api/my/points/route.ts[m[36m:[m[32m26[m[36m:[m      : Number(user?.[1;31mpoints[m ?? 0);
+[35msrc/app/api/my/points/route.ts[m[36m:[m[32m38[m[36m:[m      [1;31mpoints[m,
+[35msrc/app/api/my/points/route.ts[m[36m:[m[32m39[m[36m:[m      [1;31mpaidPoints[m,
+[35msrc/app/api/my/points/route.ts[m[36m:[m[32m40[m[36m:[m      [1;31mbonusPoints[m,
+[35msrc/app/api/my/recharge-orders/route.ts[m[36m:[m[32m33[m[36m:[m        [1;31mpoints[m: Number(o.[1;31mpoints[m),
+[35msrc/app/api/my/verify-email/route.ts[m[36m:[m[32m147[m[36m:[m        [1;31mpoints[m: cmd.inc(EMAIL_VERIFY_BONUS_POINTS),
+[35msrc/app/api/my/verify-email/route.ts[m[36m:[m[32m148[m[36m:[m        [1;31mbonusPoints[m: cmd.inc(EMAIL_VERIFY_BONUS_POINTS),
+[35msrc/app/api/my/verify-email/route.ts[m[36m:[m[32m170[m[36m:[m        [1;31mpoints[m: EMAIL_VERIFY_BONUS_POINTS,
+[35msrc/app/api/my/verify-email/route.ts[m[36m:[m[32m196[m[36m:[m      [1;31mpoints[m: EMAIL_VERIFY_BONUS_POINTS,
+[35msrc/app/api/pay/alipay/create/route.ts[m[36m:[m[32m14[m[36m:[m * - amount 和 [1;31mpoints[m 必须由服务端套餐配置决定，禁止信任前端传入
+[35msrc/app/api/pay/alipay/create/route.ts[m[36m:[m[32m28[m[36m:[m    // 1. 从服务端套餐配置查找（不信任前端传来的 amount/[1;31mpoints[m）
+[35msrc/app/api/pay/alipay/create/route.ts[m[36m:[m[32m59[m[36m:[m      [1;31mpoints[m: pkg.[1;31mpoints[m, // 充值积分
+[35msrc/app/api/pay/alipay/create/route.ts[m[36m:[m[32m69[m[36m:[m      `大图集充值 ${pkg.[1;31mpoints[m} 积分`
+[35msrc/app/api/pay/alipay/create/route.ts[m[36m:[m[32m78[m[36m:[m      [1;31mpoints[m: pkg.[1;31mpoints[m,
+[35msrc/app/api/pay/alipay/status/[orderNo]/route.ts[m[36m:[m[32m51[m[36m:[m        [1;31mpoints[m: Number(order.[1;31mpoints[m),
+[35msrc/app/api/pay/alipay/status/[orderNo]/route.ts[m[36m:[m[32m61[m[36m:[m        [1;31mpoints[m: Number(order.[1;31mpoints[m),
+[35msrc/app/api/pay/alipay/status/[orderNo]/route.ts[m[36m:[m[32m136[m[36m:[m        [1;31mpoints[m: Number(refreshedOrder.[1;31mpoints[m),
+[35msrc/app/api/pay/alipay/status/[orderNo]/route.ts[m[36m:[m[32m145[m[36m:[m      [1;31mpoints[m: Number(order.[1;31mpoints[m),
+[35msrc/app/api/styles/route.ts[m[36m:[m[32m11[m[36m:[mimport { deductPoints, recordOrderRisk } from "@/lib/server/[1;31mpoints[m";
+[35msrc/app/api/upscale/from-works/route.ts[m[36m:[m[32m9[m[36m:[mimport { assertUpscaleAllowed, deductPoints, recordOrderRisk } from "@/lib/server/[1;31mpoints[m";
+[35msrc/app/api/upscale/route.ts[m[36m:[m[32m5[m[36m:[mimport { assertUpscaleAllowed, deductPoints, recordOrderRisk } from "@/lib/server/[1;31mpoints[m";
+[35msrc/app/my/page.tsx[m[36m:[m[32m5[m[36m:[mexport const metadata = { title: "[1;31m个人中心[m" };
+[35msrc/app/my/page.tsx[m[36m:[m[32m13[m[36m:[m    { href: "/my/[1;31mpoints[m", label: "积分中心", desc: "当前积分与积分流水", emoji: "✦" },
+[35msrc/app/my/page.tsx[m[36m:[m[32m35[m[36m:[m            ✦ {session.[1;31mpoints[m} 积分
+[35msrc/components/admin/AdminReview.tsx[m[36m:[m[32m16[m[36m:[m  [1;31mpoints[m: number;
+[35msrc/components/admin/AdminReview.tsx[m[36m:[m[32m17[m[36m:[m  [1;31mpaidPoints[m: number;
+[35msrc/components/admin/AdminReview.tsx[m[36m:[m[32m18[m[36m:[m  [1;31mbonusPoints[m: number;
+[35msrc/components/admin/AdminReview.tsx[m[36m:[m[32m187[m[36m:[m                          {formatPoints(u.[1;31mpoints[m)}
+[35msrc/components/admin/AdminReview.tsx[m[36m:[m[32m193[m[36m:[m                          {u.[1;31mbonusPoints[m}
+[35msrc/components/admin/AdminReview.tsx[m[36m:[m[32m198[m[36m:[m                        <span className="text-sky-400">{u.[1;31mpaidPoints[m}</span>
+[35msrc/components/layout/Header.tsx[m[36m:[m[32m49[m[36m:[m                href="/my/[1;31mpoints[m"
+[35msrc/components/layout/Header.tsx[m[36m:[m[32m58[m[36m:[m                [1;31m个人中心[m
+[35msrc/components/layout/Header.tsx[m[36m:[m[32m61[m[36m:[m                href="/my/[1;31mpoints[m"
+[35msrc/components/layout/Header.tsx[m[36m:[m[32m65[m[36m:[m                {session.[1;31mpoints[m} 积分
+[35msrc/components/layout/MobileMenu.tsx[m[36m:[m[32m55[m[36m:[m                  [1;31m个人中心[m
+[35msrc/components/layout/MobileMenu.tsx[m[36m:[m[32m65[m[36m:[m                  href="/my/[1;31mpoints[m"
+[35msrc/components/layout/MobileMenu.tsx[m[36m:[m[32m69[m[36m:[m                  积分 · <span className="text-amber-300">{session.[1;31mpoints[m}</span>
+[35msrc/components/my/PointsViewer.tsx[m[36m:[m[32m11[m[36m:[m  [1;31mpoints[m: number;
+[35msrc/components/my/PointsViewer.tsx[m[36m:[m[32m21[m[36m:[m  [1;31mpoints[m: number;
+[35msrc/components/my/PointsViewer.tsx[m[36m:[m[32m30[m[36m:[m  const [[1;31mpoints[m, setPoints] = useState<number | null>(null);
+[35msrc/components/my/PointsViewer.tsx[m[36m:[m[32m31[m[36m:[m  const [[1;31mpaidPoints[m, setPaidPoints] = useState<number>(0);
+[35msrc/components/my/PointsViewer.tsx[m[36m:[m[32m32[m[36m:[m  const [[1;31mbonusPoints[m, setBonusPoints] = useState<number>(0);
+[35msrc/components/my/PointsViewer.tsx[m[36m:[m[32m58[m[36m:[m    fetch("/api/my/[1;31mpoints[m")
+[35msrc/components/my/PointsViewer.tsx[m[36m:[m[32m63[m[36m:[m          setPoints(Number(d.[1;31mpoints[m || 0));
+[35msrc/components/my/PointsViewer.tsx[m[36m:[m[32m64[m[36m:[m          setPaidPoints(Number(d.[1;31mpaidPoints[m || 0));
+[35msrc/components/my/PointsViewer.tsx[m[36m:[m[32m65[m[36m:[m          setBonusPoints(Number(d.[1;31mbonusPoints[m || 0));
+[35msrc/components/my/PointsViewer.tsx[m[36m:[m[32m214[m[36m:[m      setVerifyMsg("验证成功！+" + data.[1;31mpoints[m + " 积分已到账");
+[35msrc/components/my/PointsViewer.tsx[m[36m:[m[32m262[m[36m:[m            {[1;31mpoints[m ?? 0}
+[35msrc/components/my/PointsViewer.tsx[m[36m:[m[32m266[m[36m:[m              赠送 <b className="text-emerald-400">{[1;31mbonusPoints[m}</b>
+[35msrc/components/my/PointsViewer.tsx[m[36m:[m[32m269[m[36m:[m              充值 <b className="text-sky-400">{[1;31mpaidPoints[m}</b>
+[35msrc/components/my/PointsViewer.tsx[m[36m:[m[32m298[m[36m:[m                    {formatPoints(pkg.[1;31mpoints[m)}
+[35msrc/components/my/PointsViewer.tsx[m[36m:[m[32m348[m[36m:[m                  <p className="font-semibold text-emerald-400">+{formatPoints(order.[1;31mpoints[m)}</p>
+[35msrc/components/my/PointsViewer.tsx[m[36m:[m[32m466[m[36m:[m              const isPositive = Number(log.[1;31mpoints[m) >= 0;
+[35msrc/components/my/PointsViewer.tsx[m[36m:[m[32m485[m[36m:[m                    {formatPoints(Number(log.[1;31mpoints[m))}
+[35msrc/lib/alipay.ts[m[36m:[m[32m68[m[36m:[m    return_url: `${siteUrl}/my/[1;31mpoints[m?recharge=success`,
+[35msrc/lib/alipay.ts[m[36m:[m[32m89[m[36m:[m    return_url: `${siteUrl}/my/[1;31mpoints[m?recharge=success`,
+[35msrc/lib/constants.ts[m[36m:[m[32m3[m[36m:[m/** 注册赠送积分（仅一次，入 [1;31mbonusPoints[m 池） */
+[35msrc/lib/constants.ts[m[36m:[m[32m78[m[36m:[m  [1;31mpoints[m: number; // 赠送积分
+[35msrc/lib/constants.ts[m[36m:[m[32m87[m[36m:[m    [1;31mpoints[m: 1000,
+[35msrc/lib/constants.ts[m[36m:[m[32m94[m[36m:[m    [1;31mpoints[m: 5500,
+[35msrc/lib/constants.ts[m[36m:[m[32m101[m[36m:[m    [1;31mpoints[m: 11000,
+[35msrc/lib/constants.ts[m[36m:[m[32m108[m[36m:[m    [1;31mpoints[m: 23000,
+[35msrc/lib/server/points.ts[m[36m:[m[32m27[m[36m:[m * 读取用户双池积分（兼容旧数据：仅有 [1;31mpoints[m 字段时视为充值积分）
+[35msrc/lib/server/points.ts[m[36m:[m[32m43[m[36m:[m * - 两个双池字段都不存在：legacy [1;31mpoints[m -> [1;31mpaidPoints[m（视为充值积分）
+[35msrc/lib/server/points.ts[m[36m:[m[32m52[m[36m:[m  const hasPaid = user.[1;31mpaidPoints[m !== undefined;
+[35msrc/lib/server/points.ts[m[36m:[m[32m53[m[36m:[m  const hasBonus = user.[1;31mbonusPoints[m !== undefined;
+[35msrc/lib/server/points.ts[m[36m:[m[32m57[m[36m:[m      "用户积分数据异常：[1;31mpaidPoints[m/[1;31mbonusPoints[m 仅存在一个，请先运行 repair 脚本人工确认"
+[35msrc/lib/server/points.ts[m[36m:[m[32m61[m[36m:[m    // 旧数据：只有 [1;31mpoints[m 字段，视为充值积分
+[35msrc/lib/server/points.ts[m[36m:[m[32m62[m[36m:[m    const paid = Number(user.[1;31mpoints[m ?? 0);
+[35msrc/lib/server/points.ts[m[36m:[m[32m65[m[36m:[m  const paid = Number(user.[1;31mpaidPoints[m);
+[35msrc/lib/server/points.ts[m[36m:[m[32m66[m[36m:[m  const bonus = Number(user.[1;31mbonusPoints[m);
+[35msrc/lib/server/points.ts[m[36m:[m[32m71[m[36m:[m * 在事务内归一为双池字段（旧用户仅有 [1;31mpoints[m 时迁移），返回 { paid, bonus }。
+[35msrc/lib/server/points.ts[m[36m:[m[32m72[m[36m:[m * 迁移写入与后续扣减/退款同事务，保证 users.[1;31mpoints[m === [1;31mbonusPoints[m + [1;31mpaidPoints[m。
+[35msrc/lib/server/points.ts[m[36m:[m[32m80[m[36m:[m  const hasPaid = user.[1;31mpaidPoints[m !== undefined;
+[35msrc/lib/server/points.ts[m[36m:[m[32m81[m[36m:[m  const hasBonus = user.[1;31mbonusPoints[m !== undefined;
+[35msrc/lib/server/points.ts[m[36m:[m[32m85[m[36m:[m      "用户积分数据异常：[1;31mpaidPoints[m/[1;31mbonusPoints[m 仅存在一个，请先运行 repair 脚本人工确认"
+[35msrc/lib/server/points.ts[m[36m:[m[32m89[m[36m:[m    const legacy = Number(user.[1;31mpoints[m ?? 0);
+[35msrc/lib/server/points.ts[m[36m:[m[32m91[m[36m:[m      [1;31mpaidPoints[m: legacy,
+[35msrc/lib/server/points.ts[m[36m:[m[32m92[m[36m:[m      [1;31mbonusPoints[m: 0,
+[35msrc/lib/server/points.ts[m[36m:[m[32m93[m[36m:[m      [1;31mpoints[m: legacy,
+[35msrc/lib/server/points.ts[m[36m:[m[32m97[m[36m:[m  return { paid: Number(user.[1;31mpaidPoints[m), bonus: Number(user.[1;31mbonusPoints[m) };
+[35msrc/lib/server/points.ts[m[36m:[m[32m103[m[36m:[m * @param [1;31mpoints[m 需扣除的积分数（正数）
+[35msrc/lib/server/points.ts[m[36m:[m[32m115[m[36m:[m  [1;31mpoints[m: number,
+[35msrc/lib/server/points.ts[m[36m:[m[32m121[m[36m:[m  if ([1;31mpoints[m <= 0) return { ok: true, paidDeducted: 0, bonusDeducted: 0 };
+[35msrc/lib/server/points.ts[m[36m:[m[32m127[m[36m:[m  // 单事务内完成「读余额 → 校验 → 扣减双池 → 同步 [1;31mpoints[m 总字段 → 写流水」。
+[35msrc/lib/server/points.ts[m[36m:[m[32m129[m[36m:[m  // 扣减成功后始终保证 users.[1;31mpoints[m === users.[1;31mbonusPoints[m + users.[1;31mpaidPoints[m。
+[35msrc/lib/server/points.ts[m[36m:[m[32m149[m[36m:[m      needBonus = [1;31mpoints[m;
+[35msrc/lib/server/points.ts[m[36m:[m[32m151[m[36m:[m      needPaid = [1;31mpoints[m;
+[35msrc/lib/server/points.ts[m[36m:[m[32m154[m[36m:[m      needBonus = Math.min(bonus, [1;31mpoints[m);
+[35msrc/lib/server/points.ts[m[36m:[m[32m155[m[36m:[m      needPaid = [1;31mpoints[m - needBonus;
+[35msrc/lib/server/points.ts[m[36m:[m[32m164[m[36m:[m    // 一次更新同时扣减双池与 [1;31mpoints[m 总字段，保证三者一致
+[35msrc/lib/server/points.ts[m[36m:[m[32m166[m[36m:[m      [1;31mpoints[m: cmd.inc(-(needBonus + needPaid)),
+[35msrc/lib/server/points.ts[m[36m:[m[32m168[m[36m:[m    if (needBonus > 0) updates.[1;31mbonusPoints[m = cmd.inc(-needBonus);
+[35msrc/lib/server/points.ts[m[36m:[m[32m169[m[36m:[m    if (needPaid > 0) updates.[1;31mpaidPoints[m = cmd.inc(-needPaid);
+[35msrc/lib/server/points.ts[m[36m:[m[32m176[m[36m:[m      [1;31mpoints[m: -[1;31mpoints[m,
+[35msrc/lib/server/points.ts[m[36m:[m[32m177[m[36m:[m      [1;31mpaidPoints[m: needPaid,
+[35msrc/lib/server/points.ts[m[36m:[m[32m178[m[36m:[m      [1;31mbonusPoints[m: needBonus,
+[35msrc/lib/server/points.ts[m[36m:[m[32m191[m[36m:[m * @param split 原始扣费明细 { paid, bonus }，必须满足 paid + bonus === [1;31mpoints[m；
+[35msrc/lib/server/points.ts[m[36m:[m[32m196[m[36m:[m  [1;31mpoints[m: number,
+[35msrc/lib/server/points.ts[m[36m:[m[32m201[m[36m:[m  if ([1;31mpoints[m <= 0) return;
+[35msrc/lib/server/points.ts[m[36m:[m[32m205[m[36m:[m  // 与扣减一致：双池加回、[1;31mpoints[m 总字段、流水放入同一事务，保证原子与一致。
+[35msrc/lib/server/points.ts[m[36m:[m[32m220[m[36m:[m      if (split.paid + split.bonus !== [1;31mpoints[m) {
+[35msrc/lib/server/points.ts[m[36m:[m[32m223[m[36m:[m          `退款明细与订单扣费不符：paid+bonus=${split.paid + split.bonus}，[1;31mpoints[m=${[1;31mpoints[m}，请人工核对`
+[35msrc/lib/server/points.ts[m[36m:[m[32m232[m[36m:[m        `[[1;31mpoints[m] 订单退款缺少 costPaid/costBonus 明细，${[1;31mpoints[m} 积分全部退回 bonus 池，请人工核对`
+[35msrc/lib/server/points.ts[m[36m:[m[32m234[m[36m:[m      addBonus = [1;31mpoints[m;
+[35msrc/lib/server/points.ts[m[36m:[m[32m237[m[36m:[m    // 一次更新三个字段，保证 [1;31mpoints[m === [1;31mbonusPoints[m + [1;31mpaidPoints[m
+[35msrc/lib/server/points.ts[m[36m:[m[32m239[m[36m:[m      [1;31mpoints[m: cmd.inc(addBonus + addPaid),
+[35msrc/lib/server/points.ts[m[36m:[m[32m241[m[36m:[m    if (addBonus > 0) updates.[1;31mbonusPoints[m = cmd.inc(addBonus);
+[35msrc/lib/server/points.ts[m[36m:[m[32m242[m[36m:[m    if (addPaid > 0) updates.[1;31mpaidPoints[m = cmd.inc(addPaid);
+[35msrc/lib/server/points.ts[m[36m:[m[32m248[m[36m:[m      [1;31mpoints[m,
+[35msrc/lib/server/points.ts[m[36m:[m[32m249[m[36m:[m      [1;31mpaidPoints[m: addPaid,
+[35msrc/lib/server/points.ts[m[36m:[m[32m250[m[36m:[m      [1;31mbonusPoints[m: addBonus,
+[35msrc/lib/server/points.ts[m[36m:[m[32m263[m[36m:[m  [1;31mpoints[m: number,
+[35msrc/lib/server/points.ts[m[36m:[m[32m270[m[36m:[m    [1;31mpoints[m,
+[35msrc/lib/server/points.ts[m[36m:[m[32m291[m[36m:[m      [1;31mpoints[m: cmd.gt(0),
+[35msrc/lib/server/points.ts[m[36m:[m[32m358[m[36m:[m  [1;31mpoints[m: number,
+[35msrc/lib/server/points.ts[m[36m:[m[32m382[m[36m:[m    await refundPoints(userId, [1;31mpoints[m, type, remark, split);
+[35msrc/lib/server/recharge.ts[m[36m:[m[32m4[m[36m:[m * 仅此文件可以修改用户的 [1;31mpaidPoints[m / [1;31mpoints[m；其他任何文件不得直接操作。
+[35msrc/lib/server/recharge.ts[m[36m:[m[32m15[m[36m:[m * 并给用户增加 [1;31mpaidPoints[m + [1;31mpoints[m，写入积分流水。
+[35msrc/lib/server/recharge.ts[m[36m:[m[32m55[m[36m:[m  // 校验 [1;31mpoints[m（rechargePoints）字段：必须是 >0 的 SafeInteger
+[35msrc/lib/server/recharge.ts[m[36m:[m[32m56[m[36m:[m  const rechargePoints = Number(order.[1;31mpoints[m);
+[35msrc/lib/server/recharge.ts[m[36m:[m[32m103[m[36m:[m    // 增加用户 [1;31mpaidPoints[m 和总 [1;31mpoints[m（只增加 [1;31mpaidPoints[m，不影响 [1;31mbonusPoints[m）
+[35msrc/lib/server/recharge.ts[m[36m:[m[32m106[m[36m:[m      [1;31mpaidPoints[m: cmd.inc(rechargePoints),
+[35msrc/lib/server/recharge.ts[m[36m:[m[32m107[m[36m:[m      [1;31mpoints[m: cmd.inc(rechargePoints),
+[35msrc/lib/server/recharge.ts[m[36m:[m[32m115[m[36m:[m      [1;31mpoints[m: rechargePoints,

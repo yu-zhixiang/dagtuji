@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import LogoutButton from "@/components/ui/LogoutButton";
+import CurrentPoints from "@/components/my/CurrentPoints";
 import type { SessionUser } from "@/types";
 
 const NAV = [
@@ -66,7 +67,7 @@ export default function MobileMenu({
                   onClick={close}
                   className="rounded-xl px-4 py-3 text-sm text-zinc-200 transition-colors hover:bg-white/5"
                 >
-                  积分 · <span className="text-amber-300">{session.points}</span>
+                  积分 · <CurrentPoints />
                 </Link>
                 {session.isAdmin && (
                   <Link

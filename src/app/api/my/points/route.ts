@@ -1,7 +1,8 @@
 import { COLLECTIONS } from "@/lib/constants";
 import { getDb, unwrapDoc } from "@/lib/cloudbase";
 import { requireUser } from "@/lib/server/auth";
-import { handleApiError, json } from "@/lib/server/api";
+import { handleApiError } from "@/lib/server/api";
+import { NextResponse } from "next/server";
 
 const PAGE_SIZE = 100;
 
@@ -34,7 +35,7 @@ export async function GET() {
       .get();
     const logs = (logsRes.data as Record<string, unknown>[] | undefined) || [];
 
-    return json({
+    return new NextResponse(JSON.stringify({
       points,
       paidPoints,
       bonusPoints,
@@ -44,6 +45,9 @@ export async function GET() {
       emailVerifyBonusGranted: Boolean(user?.emailVerifyBonusGranted),
       isAdmin: Boolean(user?.isAdmin),
       logs,
+    }), {
+      status: 200,
+      headers: { "cache-control": "no-store" },
     });
   } catch (e) {
     return handleApiError(e);

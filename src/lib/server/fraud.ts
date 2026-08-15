@@ -66,7 +66,22 @@ export async function verifyTurnstile(
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: body.toString(),
   });
-  const data = await resp.json().catch(() => null);
+  const data = (await resp.json().catch(() => null)) as
+    | {
+        success?: boolean;
+        "error-codes"?: string[];
+        hostname?: string;
+        action?: string;
+      }
+    | null;
+  if (!data || data.success !== true) {
+    // 记录验证失败详情用于排查，但绝不记录 secret key 或完整 token
+    console.error("[turnstile] siteverify failed", {
+      "error-codes": Array.isArray(data?.["error-codes"]) ? data["error-codes"] : [],
+      hostname: typeof data?.hostname === "string" ? data.hostname : undefined,
+      action: typeof data?.action === "string" ? data.action : undefined,
+    });
+  }
   return data?.success === true;
 }
 

@@ -117,6 +117,12 @@ export default function AuthForm() {
         setError("");
       }
       startCountdown();
+      // Turnstile token 是 single-use：发送验证码已消耗一个，立即重置，
+      // 让 Turnstile 自动生成新 token 供「注册并领取积分」使用
+      setTurnstileToken("");
+      if (turnstileWidgetRef.current && window.turnstile) {
+        window.turnstile.reset(turnstileWidgetRef.current);
+      }
     } catch {
       setError("网络错误，请稍后再试");
     } finally {
@@ -127,6 +133,10 @@ export default function AuthForm() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
+    if (mode === "register" && !turnstileToken) {
+      setError("请重新完成人机验证后注册");
+      return;
+    }
     setLoading(true);
     try {
       const res = await fetch(`/api/auth/${mode}`, {

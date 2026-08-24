@@ -129,8 +129,12 @@ export interface RechargeOrder {
   amount: number; // 人民币金额（分）
   points: number; // 赠送积分
   status: RechargeOrderStatus;
+  /** 支付方式：alipay | wechat，缺失时默认 alipay */
+  paymentMethod?: "alipay" | "wechat";
   /** 支付宝交易号 */
   alipayTradeNo?: string;
+  /** 微信支付交易号 */
+  wechatTradeNo?: string;
   createdAt: Date | string;
   paidAt?: Date | string;
   creditedAt?: Date | string;

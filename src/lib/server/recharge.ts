@@ -17,14 +17,14 @@ const CREDITABLE_STATUSES = new Set(["pending", "paid"]);
  * 幂等：事务内重新读订单状态，双重保险（事务外也会先检查一次）。
  *
  * @param orderNo      订单号
- * @param alipayTradeNo 支付宝交易号（必填，用于记录）
- * @param remark       流水备注（默认 "支付宝充值"）
+ * @param tradeNo      支付平台交易号（支付宝或微信），必填
+ * @param remark       流水备注（默认 "充值"）
  * @throws ApiError  订单不存在 / 非法金额 / 非法状态流转时抛出
  */
 export async function creditRechargeOrder(
   orderNo: string,
-  alipayTradeNo: string,
-  remark: string = "支付宝充值"
+  tradeNo: string,
+  remark: string = "充值"
 ): Promise<void> {
   const db = getDb();
   const cmd = getCmd();
@@ -58,9 +58,9 @@ export async function creditRechargeOrder(
     throw new ApiError(500, "订单积分数据异常");
   }
 
-  // 校验 alipayTradeNo 非空
-  if (!alipayTradeNo || alipayTradeNo.trim() === "") {
-    throw new ApiError(400, "支付宝交易号不能为空");
+  // 校验 tradeNo 非空
+  if (!tradeNo || tradeNo.trim() === "") {
+    throw new ApiError(400, "交易号不能为空");
   }
 
   await db.runTransaction(async (tx: {
@@ -92,12 +92,14 @@ export async function creditRechargeOrder(
       throw new Error(`订单状态[${orderDocStatus}]不允许到账`);
     }
 
-    // 更新订单状态
+    // 更新订单状态（根据 paymentMethod 写入对应的交易号字段；缺失时默认 alipay）
+    const pm = String(order.paymentMethod || "alipay");
+    const tradeNoField = pm === "wechat" ? "wechatTradeNo" : "alipayTradeNo";
     await tx.collection(COLLECTIONS.RECHARGE_ORDERS).doc(orderId).update({
       status: "credited",
       paidAt: db.serverDate(),
       creditedAt: db.serverDate(),
-      alipayTradeNo: alipayTradeNo,
+      [tradeNoField]: tradeNo,
     });
 
     // 增加用户 paidPoints 和总 points（只增加 paidPoints，不影响 bonusPoints）

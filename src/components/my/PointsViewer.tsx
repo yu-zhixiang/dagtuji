@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import QRCode from "qrcode";
 import { EMAIL_VERIFY_BONUS_POINTS, RECHARGE_PACKAGES, PAY_STATUS_TEXT } from "@/lib/constants";
 import { POINT_LOG_TYPE_TEXT } from "@/lib/constants";
 import { formatDate, formatPoints } from "@/lib/utils";
@@ -20,7 +21,9 @@ type RechargeOrder = {
   amount: number;
   points: number;
   status: "pending" | "paid" | "credited" | "failed";
+  paymentMethod?: "alipay" | "wechat";
   alipayTradeNo?: string;
+  wechatTradeNo?: string;
   createdAt: string;
   paidAt?: string;
   creditedAt?: string;
@@ -52,7 +55,9 @@ export default function PointsViewer() {
   // 充值相关状态
   const [recharging, setRecharging] = useState(false);
   const [selectedPackage, setSelectedPackage] = useState<string>("package_10");
+  const [selectedMethod, setSelectedMethod] = useState<"alipay" | "wechat">("alipay");
   const [payUrl, setPayUrl] = useState<string | null>(null);
+  const [wechatQrCode, setWechatQrCode] = useState<string | null>(null);
 
   function load() {
     fetch("/api/my/points")
@@ -82,9 +87,14 @@ export default function PointsViewer() {
       .catch(() => {});
   }
 
-  async function checkOrderStatus(orderNo: string) {
+  /** 根据订单的 paymentMethod 动态选择 status API */
+  async function checkOrderStatus(order: RechargeOrder) {
+    const method = order.paymentMethod || "alipay";
+    const endpoint = method === "alipay"
+      ? `/api/pay/alipay/status/${order.orderNo}`
+      : `/api/pay/wechat/status/${order.orderNo}`;
     try {
-      const res = await fetch(`/api/pay/alipay/status/${orderNo}`);
+      const res = await fetch(endpoint);
       const data = await res.json();
       if (data.success && data.status === "credited") {
         load();
@@ -93,9 +103,11 @@ export default function PointsViewer() {
   }
 
   async function pollPendingOrders() {
-    const pendingOrders = rechargeOrders.filter((o) => o.status === "pending" || o.status === "paid");
+    const pendingOrders = rechargeOrders.filter(
+      (o) => o.status === "pending" || o.status === "paid"
+    );
     for (const order of pendingOrders) {
-      await checkOrderStatus(order.orderNo);
+      await checkOrderStatus(order);
     }
     load();
   }
@@ -120,13 +132,19 @@ export default function PointsViewer() {
   async function handleSelectPackage(packageId: string) {
     setSelectedPackage(packageId);
     setPayUrl(null);
+    setWechatQrCode(null);
   }
 
   async function handleCreateOrder() {
     setRecharging(true);
     setPayUrl(null);
+    setWechatQrCode(null);
     try {
-      const res = await fetch("/api/pay/alipay/create", {
+      const endpoint =
+        selectedMethod === "alipay"
+          ? "/api/pay/alipay/create"
+          : "/api/pay/wechat/create";
+      const res = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ packageId: selectedPackage }),
@@ -136,10 +154,17 @@ export default function PointsViewer() {
         setError(data.error || "创建订单失败");
         return;
       }
-      setPayUrl(data.payUrl);
-      // 打开支付宝支付页面
-      if (data.payUrl) {
-        window.open(data.payUrl, "_blank");
+      if (selectedMethod === "alipay") {
+        setPayUrl(data.payUrl);
+        if (data.payUrl) {
+          window.open(data.payUrl, "_blank");
+        }
+      } else {
+        if (data.codeUrl) {
+          // 本地生成二维码 dataURL
+          const qrDataUrl = await QRCode.toDataURL(data.codeUrl, { width: 240 });
+          setWechatQrCode(qrDataUrl);
+        }
       }
     } catch {
       setError("网络错误，请稍后再试");
@@ -279,8 +304,34 @@ export default function PointsViewer() {
         <h2 className="mb-4 font-semibold text-zinc-200">
           充值积分 <span className="text-xs text-amber-400 font-normal">(沙箱环境)</span>
         </h2>
-        {!payUrl ? (
+
+        {!payUrl && !wechatQrCode ? (
           <>
+            {/* 支付方式选择 */}
+            <div className="flex gap-2 mb-4">
+              {(["alipay", "wechat"] as const).map((m) => (
+                <button
+                  key={m}
+                  type="button"
+                  onClick={() => {
+                    setSelectedMethod(m);
+                    setPayUrl(null);
+                    setWechatQrCode(null);
+                  }}
+                  className={`flex-1 cursor-pointer rounded-xl border-2 py-2 text-sm font-medium transition-all ${
+                    selectedMethod === m
+                      ? m === "alipay"
+                        ? "border-[#1677FF] bg-[#1677FF]/10 text-[#1677FF]"
+                        : "border-[#07C160] bg-[#07C160]/10 text-[#07C160]"
+                      : "border-zinc-700 text-zinc-400 hover:border-zinc-500"
+                  }`}
+                >
+                  {m === "alipay" ? "支付宝" : "微信支付"}
+                </button>
+              ))}
+            </div>
+
+            {/* 套餐选择 */}
             <div className="grid grid-cols-2 gap-3 mb-4">
               {RECHARGE_PACKAGES.map((pkg) => (
                 <button
@@ -313,14 +364,31 @@ export default function PointsViewer() {
               {recharging ? "创建订单中…" : "立即充值"}
             </button>
           </>
-        ) : (
+        ) : payUrl ? (
           <div className="text-center py-4">
             <p className="text-zinc-300">正在跳转到支付宝...</p>
             <p className="mt-2 text-xs text-zinc-500">
               支付完成后请返回本站，积分将自动到账
             </p>
           </div>
-        )}
+        ) : wechatQrCode ? (
+          <div className="text-center py-4">
+            <div className="inline-block rounded-xl bg-white p-3">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={wechatQrCode}
+                alt="微信支付二维码"
+                className="w-60 h-60 block"
+                width={240}
+                height={240}
+              />
+            </div>
+            <p className="mt-3 text-zinc-300">微信扫码支付</p>
+            <p className="mt-1 text-xs text-zinc-500">
+              支付完成后请返回本站，积分将自动到账
+            </p>
+          </div>
+        ) : null}
       </div>
       )}
 

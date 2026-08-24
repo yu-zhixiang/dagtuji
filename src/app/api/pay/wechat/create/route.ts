@@ -3,23 +3,24 @@ import { COLLECTIONS, RECHARGE_PACKAGES } from "@/lib/constants";
 import { getDb } from "@/lib/cloudbase";
 import { requireUser } from "@/lib/server/auth";
 import { ApiError, handleApiError, json } from "@/lib/server/api";
-import { generateOrderNo, buildPagePayUrl } from "@/lib/alipay";
+import { generateOrderNo } from "@/lib/alipay";
+import { createNativeOrder } from "@/lib/wechat";
 
 /**
- * POST /api/pay/alipay/create
- * 创建支付宝支付订单。
+ * POST /api/pay/wechat/create
+ * 创建微信支付 Native 订单。
  *
  * 沙箱阶段：仅管理员可调用（防止普通用户测试支付）
  * 安全要求：
  * - amount 和 points 必须由服务端套餐配置决定，禁止信任前端传入
  * - orderNo 必须唯一且不可预测
- * - return_url 不作为积分到账依据
+ * - code_url 仅用于渲染二维码，不作为积分到账依据
  */
 export async function POST(req: NextRequest): Promise<Response> {
   try {
     const session = await requireUser();
     // 沙箱阶段限制：仅管理员可充值
-    if (process.env.ALIPAY_MODE === "sandbox" && !session.isAdmin) {
+    if (process.env.WECHAT_MODE === "sandbox" && !session.isAdmin) {
       throw new ApiError(403, "沙箱充值仅管理员可用");
     }
     const body = await req.json().catch(() => null);
@@ -58,15 +59,15 @@ export async function POST(req: NextRequest): Promise<Response> {
       amount: pkg.amount, // 人民币金额（分）
       points: pkg.points, // 充值积分
       status: "pending",
-      paymentMethod: "alipay",
+      paymentMethod: "wechat",
       createdAt: now,
     });
     const orderId = res.id as string;
 
-    // 4. 生成支付宝支付 URL（PC 端）
-    const payUrl = buildPagePayUrl(
+    // 4. 调用微信支付 Native 下单
+    const codeUrl = await createNativeOrder(
       orderNo,
-      (pkg.amount / 100).toFixed(2), // 转为元
+      pkg.amount,
       `大图集充值 ${pkg.points} 积分`
     );
 
@@ -74,7 +75,7 @@ export async function POST(req: NextRequest): Promise<Response> {
       success: true,
       orderId,
       orderNo,
-      payUrl,
+      codeUrl,
       amount: pkg.amount,
       points: pkg.points,
       packageName: pkg.name,

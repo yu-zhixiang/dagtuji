@@ -4,6 +4,32 @@ import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { FIND_IMAGE_COST, IMAGE_RATIOS, MAX_QUANTITY } from "@/lib/constants";
 
+/** 计算最大公约数 */
+function gcd(a: number, b: number): number {
+  a = Math.abs(Math.trunc(a));
+  b = Math.abs(Math.trunc(b));
+  while (b !== 0) {
+    [a, b] = [b, a % b];
+  }
+  return a || 1;
+}
+
+/** 将宽高自动化简为最简整数比，格式如 "16:9"；非法输入返回空串 */
+function formatAspectRatio(width: number, height: number): string {
+  if (
+    !Number.isFinite(width) ||
+    !Number.isFinite(height) ||
+    width <= 0 ||
+    height <= 0
+  ) {
+    return "";
+  }
+  const w = Math.trunc(width);
+  const h = Math.trunc(height);
+  const d = gcd(w, h);
+  return `${w / d}:${h / d}`;
+}
+
 export default function FindImageForm() {
   const router = useRouter();
   const [keyword, setKeyword] = useState("");
@@ -18,6 +44,8 @@ export default function FindImageForm() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const isCustom = ratio === "custom";
+  // 仅用于预览比例显示，不影响输入框原始值
+  const previewRatio = formatAspectRatio(Number(customW) || 0, Number(customH) || 0);
 
   function handleReferenceChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -247,13 +275,10 @@ export default function FindImageForm() {
               <span className="ml-2 text-sm text-zinc-500">
                 预览比例：
                 <span className="font-semibold text-zinc-200">
-                  {customW || "?"}:{customH || "?"}
+                  {previewRatio || "?"}
                 </span>
               </span>
             </div>
-            <p className="mt-2 text-xs text-zinc-600">
-              宽高为比例值（非像素），例如 5:7 表示宽 5 高 7
-            </p>
           </div>
         )}
       </div>

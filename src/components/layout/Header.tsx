@@ -6,6 +6,7 @@ import { SITE_NAME } from "@/lib/constants";
 import CurrentPoints from "@/components/my/CurrentPoints";
 
 const NAV = [
+  { href: "/", label: "首页" },
   { href: "/find-image", label: "找图" },
   { href: "/upscale", label: "高清大图" },
   { href: "/oil-painting", label: "油画风格" },
@@ -18,10 +19,7 @@ export default async function Header() {
   return (
     <header className="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur-md">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4">
-        <Link href="/" className="flex shrink-0 items-center gap-2">
-          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-[#7c5cff] to-[#00c2a8] text-lg font-bold text-white">
-            找
-          </span>
+        <Link href="/" className="flex shrink-0 items-center">
           <span className="text-xl font-bold tracking-wide">{SITE_NAME}</span>
         </Link>
 

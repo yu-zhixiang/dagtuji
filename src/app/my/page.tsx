@@ -17,9 +17,6 @@ export default async function MyPage() {
   return (
     <div className="mx-auto max-w-2xl px-4 py-10">
       <div className="dt-card mb-8 flex items-center gap-4 p-6">
-        <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-[#7c5cff] to-[#00c2a8] text-2xl font-bold text-white">
-          {(session.nickname || session.username).slice(0, 1).toUpperCase()}
-        </div>
         <div>
           <h1 className="text-xl font-semibold">
             {session.nickname || session.username}

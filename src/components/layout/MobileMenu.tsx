@@ -7,6 +7,7 @@ import CurrentPoints from "@/components/my/CurrentPoints";
 import type { SessionUser } from "@/types";
 
 const NAV = [
+  { href: "/", label: "首页" },
   { href: "/find-image", label: "找图" },
   { href: "/upscale", label: "高清大图" },
   { href: "/oil-painting", label: "油画风格" },
